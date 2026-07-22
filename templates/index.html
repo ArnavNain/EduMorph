@@ -1,0 +1,1083 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>EduMorph AI - The Personalized Learning Hub</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script defer src="https://cdn.jsdelivr.net/npm/alpinejs@3.x.x/dist/cdn.min.js"></script>
+    <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+    <script>
+        window.__SUPABASE_CONFIG__ = {
+            url: {{ supabase_url | tojson }},
+            anonKey: {{ supabase_anon_key | tojson }}
+        };
+    </script>
+    <style>
+        .glass-panel {
+            background: rgba(10, 15, 30, 0.75);
+            backdrop-filter: blur(28px);
+            -webkit-backdrop-filter: blur(28px);
+            transition: all 0.4s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        .shimmer {
+            background: linear-gradient(90deg, rgba(255,255,255,0.01) 25%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.01) 75%);
+            background-size: 200% 100%;
+            animation: loading-shimmer 1.8s infinite linear;
+        }
+        @keyframes loading-shimmer {
+            0% { background-position: 200% 0; }
+            100% { background-position: -200% 0; }
+        }
+
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; height: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: rgba(255, 255, 255, 0.01); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: rgba(255, 255, 255, 0.12); border-radius: 8px; }
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover { background: rgba(255, 255, 255, 0.25); }
+
+        .theme-grid-general {
+            background-image: linear-gradient(rgba(168, 85, 247, 0.08) 1px, transparent 1px), linear-gradient(90deg, rgba(168, 85, 247, 0.08) 1px, transparent 1px);
+            background-size: 50px 50px;
+        }
+        
+        .theme-grid-math {
+            background-image: linear-gradient(rgba(244, 63, 94, 0.06) 1px, transparent 1px), linear-gradient(90deg, rgba(244, 63, 94, 0.06) 1px, transparent 1px);
+            background-size: 25px 25px;
+            animation: math-grid-drift 30s linear infinite;
+        }
+        @keyframes math-grid-drift {
+            0% { background-position: 0px 0px; }
+            100% { background-position: 50px 50px; }
+        }
+
+        .theme-grid-chemistry {
+            background-image: radial-gradient(rgba(16, 185, 129, 0.12) 2px, transparent 2px);
+            background-size: 40px 40px;
+        }
+        @keyframes liquid-boil-deep {
+            0%, 100% { transform: scaleY(1) skewX(0deg); }
+            33% { transform: scaleY(1.03) skewX(1deg); }
+            66% { transform: scaleY(0.97) skewX(-1deg); }
+        }
+        @keyframes bubble-rise-fast {
+            0% { transform: translateY(220px) scale(0.4); opacity: 0; }
+            15% { opacity: 0.8; }
+            85% { opacity: 0.5; }
+            100% { transform: translateY(-40px) scale(1.5); opacity: 0; }
+        }
+        @keyframes vapor-vent-massive {
+            0% { transform: translateY(0) scale(0.6) translateX(0); opacity: 0; filter: blur(4px); }
+            20% { opacity: 0.7; }
+            70% { opacity: 0.3; filter: blur(12px); }
+            100% { transform: translateY(-350px) scale(4.5) translateX(60px); opacity: 0; filter: blur(24px); }
+        }
+        .chem-bubble { animation: bubble-rise-fast infinite linear; }
+        .chem-vapor { animation: vapor-vent-massive infinite ease-in-out; }
+
+        .theme-grid-space {
+            background-image: radial-gradient(rgba(255, 255, 255, 0.18) 1.5px, transparent 1.5px);
+            background-size: 50px 50px;
+        }
+        @keyframes blackhole-spin {
+            0% { transform: translate(-50%, -50%) rotate(0deg); }
+            100% { transform: translate(-50%, -50%) rotate(360deg); }
+        }
+
+        @keyframes dynamic-audio {
+            0%, 100% { height: 4px; }
+            50% { height: 24px; }
+        }
+        .audio-bar { animation: dynamic-audio 0.4s infinite ease-in-out; }
+        .animate-blackhole { animation: blackhole-spin 12s infinite linear; }
+    </style>
+</head>
+<body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-purple-500 selection:text-white relative overflow-x-hidden"
+      x-data="{ 
+        currentView: 'home', 
+        menuOpen: false,
+        currentSubject: 'general', 
+        historyList: [],
+        activeMode: 'alchemist', 
+        topic: '', 
+        
+        user: null,
+        isLoggedIn: false,
+        authViewMode: 'login',
+        authForm: { name: '', email: '', password: '' },
+        authResetForm: { email: '', new_password: '' },
+        authError: '',
+        authSuccess: '',
+        authLoading: false,
+        supabaseClient: null,
+
+        profile: 'ELI5', 
+        explLength: 'Standard',
+        depthIndex: 1,
+        depths: ['High School', 'Undergrad', 'Post-Grad Specialist'],
+        loadingAlchemist: false,
+        alchemistResult: null,
+        errorAlchemist: '',
+        activeSubsectionIndex: 0,
+        activeTheme: 'general',
+
+        simSliderA: 50,
+        simSliderB: 30,
+        
+        evalType: 'Quiz', 
+        difficulty: 'Intermediate',
+        evalCount: 4,
+        loadingForge: false,
+        forgeItems: [],
+        errorForge: '',
+        sessionWeakGaps: [],
+        quizAnswers: {}, 
+        quizSubmitted: {}, 
+        totalCorrect: 0,
+        totalAnswered: 0,
+
+        showVideoLecturer: false,
+        videoPlaying: false,
+        videoProgress: 0,
+        videoInterval: null,
+        mockSubtitleIndex: 0,
+        
+        get currentDepth() { return this.depths[this.depthIndex]; },
+        get performancePercentage() {
+            if(this.totalAnswered === 0) return 0;
+            return Math.round((this.totalCorrect / this.totalAnswered) * 100);
+        },
+
+        formatMathSyntax(text) {
+            if (!text) return '';
+            return text
+                .replace(/sqrt\(([^)]+)\)/g, '√$1')
+                .replace(/\^2/g, '²')
+                .replace(/\^3/g, '³')
+                .replace(/\^n/g, 'ⁿ')
+                .replace(/delta/gi, 'Δ')
+                .replace(/theta/gi, 'θ')
+                .replace(/pi/gi, 'π')
+                .replace(/omega/gi, 'ω')
+                .replace(/infinity/gi, '∞')
+                .replace(/alpha/gi, 'α')
+                .replace(/beta/gi, 'β')
+                .replace(/sum\(([^)]+)\)/g, '∑($1)')
+                .replace(/integral\(([^)]+)\)/g, '∫($1)');
+        },
+
+        get liveInteractiveExplanation() {
+            if (!this.alchemistResult || !this.alchemistResult.subsections) return 'No content loaded yet.';
+            let section = this.alchemistResult.subsections[this.activeSubsectionIndex];
+            if (!section) return 'End of page content.';
+            
+            let valA = this.simSliderA;
+            let valB = this.simSliderB;
+            
+            if (this.activeTheme === 'math') {
+                return `Adjusting the sliders changes the scaling value to ${valA}, which affects the rate of the function. Moving the offset setting to ${valB} shifts the visual geometry right along the axes.`;
+            } else if (this.activeTheme === 'chemistry') {
+                return `Raising the primary level here to a temperature of ${valA}°C speeds up the chemical reaction by ${(valA * 1.4).toFixed(0)}%. At a liquid container volume of ${valB}mL, the molecules shift physical patterns.`;
+            } else if (this.activeTheme === 'space') {
+                return `Calibrating the weight equation here to ${valA} solar masses stretches the gravitational boundary. Shifting the speed factor to ${valB} km/s changes the physics required to stop an object.`;
+            }
+            return `Modifying the slider controls changes setting A to ${valA} points and setting B to ${valB} points. This directly alters the core balance.`;
+        },
+
+        get activeSubtitles() {
+            return [
+                'Starting up the voice companion lecture... setting up lesson topic highlights.',
+                'Notice how moving the control bars immediately changes the numbers on your screen.',
+                'When we shift these values around, the fundamental behavior responds in real time.',
+                'Let us walk through this example step by step to build full understanding.'
+            ];
+        },
+
+        get themeConfig() {
+            const themes = {
+                math: {
+                    name: 'Mathematics', icon: '📐', gradient: 'from-rose-500 via-red-500 to-orange-500', textAccent: 'text-rose-400',
+                    borderAccent: 'border-rose-500/30 focus:border-rose-500 shadow-rose-950/20', bgClass: 'theme-grid-math',
+                    buttonBg: 'bg-gradient-to-r from-rose-600 to-orange-600 hover:from-rose-500 hover:to-orange-500',
+                    panelBg: 'bg-rose-950/10 border border-rose-500/20'
+                },
+                chemistry: {
+                    name: 'Chemistry Lab', icon: '🧪', gradient: 'from-emerald-400 via-teal-500 to-green-500', textAccent: 'text-emerald-400',
+                    borderAccent: 'border-emerald-500/30 focus:border-emerald-500 shadow-emerald-950/20', bgClass: 'theme-grid-chemistry',
+                    buttonBg: 'bg-gradient-to-r from-emerald-600 to-teal-600 hover:from-emerald-500 hover:to-teal-500',
+                    panelBg: 'bg-emerald-950/15 border border-emerald-500/25'
+                },
+                space: {
+                    name: 'Space Science', icon: '🌌', gradient: 'from-indigo-500 via-purple-500 to-cyan-500', textAccent: 'text-cyan-400',
+                    borderAccent: 'border-cyan-500/30 focus:border-cyan-500 shadow-cyan-950/20', bgClass: 'theme-grid-space',
+                    buttonBg: 'bg-gradient-to-r from-indigo-600 to-cyan-600 hover:from-indigo-500 hover:to-cyan-500',
+                    panelBg: 'bg-indigo-950/10 border border-cyan-500/20'
+                },
+                general: {
+                    name: 'General Studies', icon: '💠', gradient: 'from-purple-400 via-pink-400 to-cyan-400', textAccent: 'text-purple-400',
+                    borderAccent: 'border-white/10 focus:border-purple-500 shadow-purple-950/10', bgClass: 'theme-grid-general',
+                    buttonBg: 'bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500',
+                    panelBg: 'bg-white/5 border border-white/10'
+                }
+            };
+            return themes[this.currentSubject] || themes.general;
+        },
+
+        init() {
+            this.historyList = JSON.parse(localStorage.getItem('edumorph_history') || '[]');
+            const storedUser = localStorage.getItem('edumorph_user');
+            if (storedUser) {
+                this.user = JSON.parse(storedUser);
+                this.isLoggedIn = true;
+            }
+
+            const cfg = window.__SUPABASE_CONFIG__ || {};
+            if (window.supabase && cfg.url && cfg.anonKey) {
+                this.supabaseClient = window.supabase.createClient(
+                    cfg.url,
+                    cfg.anonKey,
+                    {
+                        auth: {
+                            flowType: 'pkce',
+                            detectSessionInUrl: true,
+                            persistSession: true,
+                            autoRefreshToken: true
+                        }
+                    }
+                );
+
+                // Eagerly restore any session Supabase already has persisted
+                // (covers the case where the async onAuthStateChange
+                // INITIAL_SESSION event fires later or gets missed).
+                this.supabaseClient.auth.getSession().then(({ data }) => {
+                    this.applySupabaseSession(data.session);
+                });
+
+                this.supabaseClient.auth.onAuthStateChange((event, session) => {
+                    if (event === 'SIGNED_OUT') {
+                        this.user = null;
+                        this.isLoggedIn = false;
+                        localStorage.removeItem('edumorph_user');
+                        return;
+                    }
+                    this.applySupabaseSession(session);
+                });
+            }
+        },
+
+        applySupabaseSession(session) {
+            if (session && session.user) {
+                this.user = {
+                    name: session.user.user_metadata?.full_name || session.user.email.split('@')[0],
+                    email: session.user.email
+                };
+                this.isLoggedIn = true;
+                localStorage.setItem('edumorph_user', JSON.stringify(this.user));
+            }
+        },
+
+        async handleAuthSubmit() {
+            this.authError = '';
+            this.authSuccess = '';
+            this.authLoading = true;
+            try {
+                const endpoint = this.authViewMode === 'signup' ? '/api/signup' : '/api/login';
+                const payload = {
+                    email: this.authForm.email,
+                    password: this.authForm.password
+                };
+                if (this.authViewMode === 'signup') payload.name = this.authForm.name;
+
+                let res = await fetch(endpoint, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(payload)
+                });
+                let data = await res.json();
+                
+                if (res.ok && data.success) {
+                    this.user = data.user;
+                    this.isLoggedIn = true;
+                    localStorage.setItem('edumorph_user', JSON.stringify(data.user));
+                    this.currentView = 'home';
+                    this.authForm = { name: '', email: '', password: '' };
+                } else {
+                    this.authError = data.error || 'Authentication failed.';
+                }
+            } catch (err) {
+                this.authError = 'Network error connecting to the server.';
+            } finally {
+                this.authLoading = false;
+            }
+        },
+
+        async handleResetPassword() {
+            this.authError = '';
+            this.authSuccess = '';
+            this.authLoading = true;
+            try {
+                let res = await fetch('/api/reset-password', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify(this.authResetForm)
+                });
+                let data = await res.json();
+                if (res.ok && data.success) {
+                    this.authSuccess = 'Password reset successfully! You can now log in with your new password.';
+                    this.authResetForm = { email: '', new_password: '' };
+                } else {
+                    this.authError = data.error || 'Password reset failed.';
+                }
+            } catch (err) {
+                this.authError = 'Error connecting to the server.';
+            } finally {
+                this.authLoading = false;
+            }
+        },
+
+        async handleGoogleAuth() {
+            this.authError = '';
+            if (!this.supabaseClient) {
+                this.authError = 'Supabase JS client failed to initialize.';
+                return;
+            }
+            try {
+                const { error } = await this.supabaseClient.auth.signInWithOAuth({
+                    provider: 'google',
+                    options: {
+                        redirectTo: window.location.origin
+                    }
+                });
+                if (error) throw error;
+            } catch (err) {
+                this.authError = err.message || 'Google Auth failed.';
+            }
+        },
+
+        logout() {
+            if (this.supabaseClient) {
+                this.supabaseClient.auth.signOut();
+            }
+            this.user = null;
+            this.isLoggedIn = false;
+            localStorage.removeItem('edumorph_user');
+            this.currentView = 'home';
+        },
+
+        setSubject(sub) {
+            this.currentSubject = sub;
+            this.activeTheme = sub; // Default to chosen subject for visualizations
+            this.alchemistResult = null;
+            this.forgeItems = [];
+            this.quizAnswers = {};
+            this.quizSubmitted = {};
+            this.errorAlchemist = '';
+            this.errorForge = '';
+            this.loadingAlchemist = false;
+            this.loadingForge = false;
+            this.totalCorrect = 0;
+            this.totalAnswered = 0;
+            this.activeSubsectionIndex = 0;
+            this.stopVideoLecture();
+
+            if(sub === 'chemistry') this.topic = 'Organic Functional Groups & Alkynes';
+            else if(sub === 'math') this.topic = 'Limits of Functions where f(x) = sqrt(x^2 + 4)';
+            else if(sub === 'space') this.topic = 'Event Horizon Tidal Forces & Spaghettification';
+            else this.topic = '';
+            
+            this.menuOpen = false;
+        },
+
+        toggleVideoPlayback() {
+            this.videoPlaying = !this.videoPlaying;
+            if(this.videoPlaying) {
+                this.videoInterval = setInterval(() => {
+                    if(this.videoProgress < 100) {
+                        this.videoProgress += 1.2;
+                        this.mockSubtitleIndex = Math.floor((this.videoProgress / 100) * this.activeSubtitles.length);
+                    } else {
+                        this.stopVideoLecture();
+                    }
+                }, 100);
+            } else {
+                if(this.videoInterval) clearInterval(this.videoInterval);
+            }
+        },
+
+        stopVideoLecture() {
+            this.videoPlaying = false;
+            this.videoProgress = 0;
+            this.mockSubtitleIndex = 0;
+            this.showVideoLecturer = false;
+            if(this.videoInterval) {
+                clearInterval(this.videoInterval);
+                this.videoInterval = null;
+            }
+        },
+
+        saveHistory(type) {
+            const entry = {
+                id: Date.now(),
+                type: type,
+                subject: this.currentSubject,
+                topic: this.topic,
+                timestamp: new Date().toLocaleTimeString([], {hour: '2-digit', minute:'2-digit'})
+            };
+            this.historyList = [entry, ...this.historyList.slice(0, 19)];
+            localStorage.setItem('edumorph_history', JSON.stringify(this.historyList));
+        },
+
+        loadHistoryItem(item) {
+            this.currentSubject = item.subject || 'general';
+            this.activeTheme = this.currentSubject;
+            this.topic = item.topic;
+            this.currentView = 'workspace';
+            this.activeSubsectionIndex = 0;
+            this.stopVideoLecture();
+            
+            if (item.type === 'Alchemist') {
+                this.activeMode = 'alchemist';
+                this.triggerMorph();
+            } else {
+                this.activeMode = 'forge';
+                this.triggerForge();
+            }
+            this.menuOpen = false;
+        },
+        
+        async triggerForge() {
+            if(!this.topic.trim()) {
+                this.errorForge = 'Please enter a target evaluation topic name first.';
+                return;
+            }
+            this.errorForge = '';
+            this.loadingForge = true;
+            this.forgeItems = [];
+            this.quizAnswers = {};
+            this.quizSubmitted = {};
+            this.totalCorrect = 0;
+            this.totalAnswered = 0;
+
+            try {
+                let response = await fetch('/api/generate-evaluation', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        topic: this.topic, 
+                        type: this.evalType, 
+                        difficulty: this.difficulty,
+                        count: this.evalCount 
+                    })
+                });
+                let data = await response.json();
+                if(response.ok && data && data.items) {
+                    this.forgeItems = data.items;
+                } else {
+                    throw new Error();
+                }
+            } catch(e) {
+                this.forgeItems = [
+                    {
+                        question: `Which component best serves as the core foundational driver when evaluating ${this.topic}?`,
+                        options: ['The isolated environmental baseline constant', 'Systemic variance under variable load offsets', 'The inverse proportional geometric variable', 'Peripheral calibration vectors'],
+                        correct_index: 1,
+                        explanation: 'Analyzing trends requires focusing on systematic balance points as parameters shift under local load variables.'
+                    },
+                    {
+                        question: `What is a common testing pitfall or trap configuration to watch out for concerning ${this.topic}?`,
+                        options: ['Over-scaling secondary parameters during active iterations', 'Maintaining static configuration matrices indefinitely', 'Using fractional integers inside limits', 'Reversing visual axes parameters'],
+                        correct_index: 0,
+                        explanation: 'A common mistake is allowing small changes or multipliers to snowball and distort full validation vectors.'
+                    }
+                ];
+            } finally {
+                this.saveHistory('Forge');
+                this.loadingForge = false;
+            }
+        },
+
+        async triggerMorph() {
+            if(!this.topic.trim()) {
+                this.errorAlchemist = 'Please enter a learning topic or concept name first.';
+                return;
+            }
+            this.errorAlchemist = '';
+            this.loadingAlchemist = true;
+            this.alchemistResult = null;
+            this.activeSubsectionIndex = 0;
+            this.stopVideoLecture();
+            
+            try {
+                let response = await fetch('/api/morph-concept', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ 
+                        topic: this.topic, 
+                        profile: this.profile, 
+                        depth: this.currentDepth,
+                        length: this.explLength 
+                    })
+                });
+                let data = await response.json();
+                
+                if(response.ok) {
+                    if (data && !data.subsections) {
+                        data.subsections = [
+                            {
+                                title: '1. What it is & Why it matters',
+                                content: `Let's break down ${this.topic} completely. At its most fundamental level, this concept is all about tracing how different pieces connect when conditions shift.`,
+                                checkpoint: {
+                                    question: 'According to this introductory breakdown, why do we study this concept framework?',
+                                    options: ['To safely ignore changing background conditions', 'To accurately anticipate patterns and master core variables', 'To completely eliminate the need for calculations', 'To keep values perfectly static indefinitely'],
+                                    correct_index: 1,
+                                    explanation: 'The text explains that we study this concept to predict patterns and get a handle on moving variables.'
+                                }
+                            }
+                        ];
+                    }
+                    this.alchemistResult = data;
+                    // Bind the interactive canvas to the theme picked dynamically by the LLM based on topic
+                    this.activeTheme = data.interactive_theme || this.currentSubject;
+                    this.saveHistory('Alchemist');
+                } else {
+                    this.errorAlchemist = data.error || 'The study generator encountered an unexpected hiccup.';
+                }
+            } catch (e) {
+                this.alchemistResult = {
+                    subsections: [
+                        {
+                            title: '1. What it is & Why it matters',
+                            content: `Let's break down ${this.topic} completely. At its most fundamental level, this concept is all about tracing how different pieces connect when conditions shift. Think of it like a map: if you change one starting path, the ending point responds predictably.`,
+                            checkpoint: {
+                                question: 'According to this introductory breakdown, why do we study this concept framework?',
+                                options: ['To safely ignore changing background conditions', 'To accurately anticipate patterns and master core variables', 'To completely eliminate the need for calculations', 'To keep values perfectly static indefinitely'],
+                                correct_index: 1,
+                                explanation: 'The text explains that we study this concept to predict patterns.'
+                            }
+                        }
+                    ]
+                };
+                this.activeTheme = this.currentSubject;
+                this.saveHistory('Alchemist');
+            } finally {
+                this.loadingAlchemist = false;
+            }
+        }
+    }">
+
+    <div class="absolute inset-0 min-h-screen z-0 overflow-hidden pointer-events-none opacity-90 transition-all duration-1000"
+         :class="themeConfig.bgClass"></div>
+
+    <div x-show="currentSubject === 'chemistry' && currentView === 'workspace'" class="absolute inset-0 overflow-hidden pointer-events-none z-0 mix-blend-screen opacity-85">
+        <div class="absolute bottom-0 right-[4%] w-[380px] h-[85%] flex flex-col items-center justify-end">
+            <div class="w-16 h-36 relative">
+                <div class="chem-vapor w-10 h-10 bg-emerald-400/25 rounded-full absolute top-0 left-2" style="animation-duration: 6s; animation-delay: 0s;"></div>
+                <div class="chem-vapor w-14 h-14 bg-teal-400/20 rounded-full absolute top-2 left-0" style="animation-duration: 4.8s; animation-delay: 1.8s;"></div>
+            </div>
+            <div class="w-16 h-48 border-x-4 border-emerald-400/30 bg-slate-900/40 relative flex flex-col justify-around py-4">
+                <div class="w-full h-1 bg-emerald-400/40 transform rotate-12"></div>
+                <div class="w-full h-1 bg-teal-400/40 transform -rotate-12"></div>
+            </div>
+            <div class="w-[320px] h-[300px] border-4 border-emerald-400/40 rounded-b-[120px] rounded-t-[40px] relative overflow-hidden bg-slate-950/60 shadow-[0_0_60px_rgba(16,185,129,0.25),inset_0_0_30px_rgba(16,185,129,0.15)]">
+                <div class="absolute bottom-0 left-0 right-0 h-[140px] bg-gradient-to-t from-emerald-500/40 via-teal-500/30 to-emerald-400/20 border-t-2 border-emerald-300/50 origin-bottom" style="animation: liquid-boil-deep 4s infinite ease-in-out;">
+                    <div class="chem-bubble absolute left-[15%] w-4 h-4 bg-emerald-300/60 rounded-full" style="animation-duration: 2.2s; animation-delay: 0.1s;"></div>
+                    <div class="chem-bubble absolute right-[25%] w-5 h-5 bg-emerald-400/60 rounded-full" style="animation-duration: 1.9s; animation-delay: 1.2s;"></div>
+                </div>
+            </div>
+            <div class="w-[360px] h-4 bg-slate-800/80 border border-emerald-500/30 rounded-full mt-1 shadow-md"></div>
+        </div>
+    </div>
+
+    <div x-show="currentSubject === 'math' && currentView === 'workspace'" class="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-70">
+        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+            <line x1="0" y1="300" x2="2500" y2="300" stroke="rgba(244,63,94,0.35)" stroke-width="2.5" />
+            <line x1="450" y1="0" x2="450" y2="2500" stroke="rgba(244,63,94,0.35)" stroke-width="2.5" />
+            <path d="M 0 300 Q 250 100, 500 300 T 1000 300 T 1500 300 T 2000 300" fill="none" stroke="url(#math-glow)" stroke-width="4" class="filter drop-shadow-[0_0_16px_rgba(244,63,94,0.65)]"/>
+            <defs>
+                <linearGradient id="math-glow" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#f43f5e" /><stop offset="100%" stop-color="#f97316" />
+                </linearGradient>
+            </defs>
+        </svg>
+    </div>
+
+    <div x-show="currentView === 'home' || currentView === 'auth' || currentSubject === 'space'" class="absolute inset-0 overflow-hidden pointer-events-none z-0 opacity-80">
+        <div class="absolute top-[45%] left-1/2 -translate-x-1/2 -translate-y-1/2 w-[800px] h-[800px] flex items-center justify-center">
+            <div class="absolute w-[650px] h-[240px] rounded-full bg-gradient-to-r from-amber-400 via-rose-500 to-cyan-400 opacity-35 blur-2xl transform -rotate-[22deg] animate-blackhole"></div>
+            <div class="absolute w-[180px] h-[180px] bg-slate-950 rounded-full shadow-[0_0_60px_rgba(239,68,68,0.7),0_0_120px_rgba(168,85,247,0.5)] border border-slate-900 z-20"></div>
+        </div>
+    </div>
+
+    <nav class="fixed top-0 left-0 right-0 h-16 bg-slate-950/65 backdrop-blur-xl border-b border-white/5 z-40 flex items-center justify-between px-6">
+        <div class="flex items-center gap-4">
+            <button @click="menuOpen = !menuOpen" aria-label="Toggle Navigation Menu" class="flex flex-col justify-between w-5 h-4 focus:outline-none relative z-50 group">
+                <span class="w-5 h-0.5 bg-slate-200 rounded-lg transition-all duration-300" :class="menuOpen ? 'rotate-45 translate-x-0.5 translate-y-1.5' : ''"></span>
+                <span class="w-5 h-0.5 bg-slate-200 rounded-lg transition-all duration-300" :class="menuOpen ? 'opacity-0 scale-0' : ''"></span>
+                <span class="w-5 h-0.5 bg-slate-200 rounded-lg transition-all duration-300" :class="menuOpen ? '-rotate-45 translate-x-0.5 -translate-y-1.5' : ''"></span>
+            </button>
+            <button @click="currentView = 'home'" class="flex items-center gap-2 hover:scale-105 transition-all">
+                <span class="font-black text-xl bg-gradient-to-r bg-clip-text text-transparent" :class="themeConfig.gradient">EduMorph AI</span>
+                <span class="text-xs bg-white/5 border border-white/10 px-1.5 py-0.5 rounded text-slate-400" x-text="themeConfig.icon"></span>
+            </button>
+        </div>
+        
+        <div class="flex items-center gap-4">
+            <div class="text-xs font-black px-4 py-1 rounded-full border bg-slate-950/80 transition-all" :class="themeConfig.borderAccent.split(' ')[0]" x-text="themeConfig.name" x-show="currentView === 'workspace'"></div>
+            
+            <template x-if="!isLoggedIn">
+                <button @click="currentView = 'auth'; authViewMode = 'login';" class="text-xs font-bold bg-white/10 border border-white/20 px-4 py-2 rounded-lg hover:bg-white/20 transition-all shadow-md">
+                    Login / Sign Up
+                </button>
+            </template>
+            <template x-if="isLoggedIn">
+                <div class="flex items-center gap-4 bg-white/5 border border-white/10 px-3 py-1.5 rounded-xl">
+                    <span class="text-[11px] font-bold text-slate-300">Hello, <span class="text-white" x-text="user.name"></span></span>
+                    <div class="w-px h-3 bg-white/20"></div>
+                    <button @click="logout()" class="text-[10px] text-rose-400 hover:text-rose-300 uppercase font-black tracking-wider transition-colors">Logout</button>
+                </div>
+            </template>
+        </div>
+    </nav>
+
+    <div x-show="menuOpen" @click="menuOpen = false" x-transition class="fixed inset-0 bg-slate-950/80 backdrop-blur-sm z-40"></div>
+    <div x-show="menuOpen" x-transition:enter="transition ease-out duration-300 transform" x-transition:enter-start="-translate-x-full" x-transition:enter-end="translate-x-0" x-transition:leave="transition ease-in duration-200 transform" x-transition:leave-start="translate-x-0" x-transition:leave-end="-translate-x-full" class="fixed top-16 bottom-0 left-0 w-80 bg-slate-950/95 border-r border-white/5 shadow-2xl z-40 flex flex-col justify-between backdrop-blur-2xl p-6 overflow-y-auto custom-scrollbar">
+        <div class="space-y-4 mb-8">
+            <h3 class="text-xs font-black tracking-widest text-slate-500 uppercase border-b border-white/5 pb-2">📂 CORE LEARNING MODULES</h3>
+            <div class="grid grid-cols-1 gap-2">
+                <button @click="setSubject('chemistry'); currentView = 'workspace';" class="flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:scale-[1.01]" :class="currentSubject === 'chemistry' ? 'bg-emerald-950/30 border-emerald-500/40 text-emerald-300' : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'"><span class="text-xl">🧪</span><div><p class="text-xs font-bold">Chemistry Lab</p><span class="text-[10px] text-slate-500 font-mono">Organic Compounds</span></div></button>
+                <button @click="setSubject('math'); currentView = 'workspace';" class="flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:scale-[1.01]" :class="currentSubject === 'math' ? 'bg-rose-950/30 border-rose-500/40 text-rose-300' : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'"><span class="text-xl">📐</span><div><p class="text-xs font-bold">Mathematics</p><span class="text-[10px] text-slate-500 font-mono">Calculus & Graphs</span></div></button>
+                <button @click="setSubject('space'); currentView = 'workspace';" class="flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:scale-[1.01]" :class="currentSubject === 'space' ? 'bg-indigo-950/30 border-cyan-500/40 text-cyan-300' : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'"><span class="text-xl">🌌</span><div><p class="text-xs font-bold">Space Science</p><span class="text-[10px] text-slate-500 font-mono">Cosmology Fields</span></div></button>
+                <button @click="setSubject('general'); currentView = 'workspace';" class="flex items-center gap-3 p-3 rounded-xl border text-left transition-all hover:scale-[1.01]" :class="currentSubject === 'general' ? 'bg-purple-950/30 border-purple-500/40 text-purple-300' : 'bg-white/5 border-white/5 text-slate-400 hover:text-slate-200 hover:bg-white/10'"><span class="text-xl">💠</span><div><p class="text-xs font-bold">General Studies</p><span class="text-[10px] text-slate-500 font-mono">All Disciplines</span></div></button>
+            </div>
+            
+            <div class="pt-4 border-t border-white/5">
+                <h3 class="text-xs font-black tracking-widest text-slate-500 uppercase pb-2">⏳ RECENT TOPICS</h3>
+                
+                <template x-if="isLoggedIn">
+                    <div class="space-y-1.5 max-h-56 overflow-y-auto custom-scrollbar pr-1" x-show="historyList.length > 0">
+                        <template x-for="item in historyList" :key="item.id">
+                            <button @click="loadHistoryItem(item)" class="w-full text-left p-2 rounded-lg bg-white/[0.02] border border-white/5 hover:bg-white/5 transition-all flex items-center justify-between text-[11px] group"><div class="truncate mr-2"><span class="font-bold text-slate-300 group-hover:text-purple-400 transition-colors" x-text="item.topic"></span><p class="text-[9px] text-slate-500" x-text="item.type + ' • ' + item.timestamp"></p></div><span class="text-[10px] opacity-60">⚡</span></button>
+                        </template>
+                    </div>
+                </template>
+
+                <template x-if="!isLoggedIn">
+                    <div class="p-4 text-center border border-white/5 rounded-xl bg-white/[0.02] mt-2">
+                        <p class="text-[10px] text-slate-400 mb-3 font-medium">Login/Signup to access your learning history vault.</p>
+                        <button @click="currentView = 'auth'; menuOpen = false;" class="text-[10px] bg-purple-500/20 text-purple-300 px-3 py-2 rounded-lg font-bold w-full border border-purple-500/30 hover:bg-purple-500/40 transition-all uppercase tracking-wider shadow-sm">
+                            Go to Login
+                        </button>
+                    </div>
+                </template>
+            </div>
+        </div>
+        <p class="text-[9px] font-mono text-slate-600 border-t border-white/5 pt-4">SYSTEM DEPLOYMENT MATRIX ID: 2026.BETA.V5</p>
+    </div>
+
+    <main class="relative z-10 pt-24 px-4 md:px-8 max-w-7xl mx-auto pb-24 min-h-screen">
+        
+        <div x-show="currentView === 'auth'" x-transition class="flex flex-col items-center justify-center min-h-[70vh]">
+            <div class="glass-panel p-8 rounded-3xl border border-white/10 shadow-2xl w-full max-w-md relative overflow-hidden bg-slate-950/60 backdrop-blur-3xl z-20">
+                <div class="text-center mb-8">
+                    <h2 class="text-2xl font-black text-white tracking-tight" x-text="authViewMode === 'login' ? 'Welcome Back' : (authViewMode === 'signup' ? 'Create Account' : 'Reset Password')"></h2>
+                    <p class="text-xs text-slate-400 mt-2">Manage your account credentials and dynamic parameters.</p>
+                </div>
+
+                <div x-show="authError" class="mb-6 p-3 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-3">
+                    ❌ <span x-text="authError"></span>
+                </div>
+
+                <div x-show="authSuccess" class="mb-6 p-3 bg-emerald-950/40 border border-emerald-500/30 rounded-xl text-xs text-emerald-300 flex items-center gap-3">
+                    ✅ <span x-text="authSuccess"></span>
+                </div>
+
+                <button x-show="authViewMode !== 'reset'" @click="handleGoogleAuth()" class="w-full bg-white text-slate-900 font-bold text-sm px-4 py-3 rounded-xl shadow-md hover:bg-slate-100 transition-all flex items-center justify-center gap-3 mb-6">
+                    <svg class="w-4 h-4" viewBox="0 0 24 24"><path fill="currentColor" d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92c-.26 1.37-1.04 2.53-2.21 3.31v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.09z"/><path fill="currentColor" d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z"/><path fill="currentColor" d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.22.81-.62z"/><path fill="currentColor" d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z"/></svg>
+                    Continue with Google
+                </button>
+
+                <div x-show="authViewMode !== 'reset'" class="relative flex py-2 items-center mb-6">
+                    <div class="flex-grow border-t border-white/10"></div>
+                    <span class="flex-shrink-0 mx-4 text-[10px] uppercase font-black text-slate-500 tracking-widest">Or with database account</span>
+                    <div class="flex-grow border-t border-white/10"></div>
+                </div>
+
+                <form x-show="authViewMode !== 'reset'" @submit.prevent="handleAuthSubmit" class="space-y-4">
+                    <div x-show="authViewMode === 'signup'">
+                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Username / Full Name</label>
+                        <input type="text" x-model="authForm.name" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="John Doe" :required="authViewMode === 'signup'">
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Email Address</label>
+                        <input type="email" x-model="authForm.email" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="you@example.com" required>
+                    </div>
+                    <div>
+                        <div class="flex justify-between items-center mb-1">
+                            <label class="text-[10px] font-black uppercase text-slate-400">Password</label>
+                            <button type="button" x-show="authViewMode === 'login'" @click="authViewMode = 'reset'; authError = ''; authSuccess = '';" class="text-[10px] font-bold text-purple-400 hover:text-purple-300">Forgot Password?</button>
+                        </div>
+                        <input type="password" x-model="authForm.password" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" :disabled="authLoading" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm px-4 py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider mt-2 disabled:opacity-50">
+                        <span x-text="authLoading ? 'Processing...' : (authViewMode === 'login' ? 'Login to Account' : 'Create Database Account')"></span>
+                    </button>
+                </form>
+
+                <form x-show="authViewMode === 'reset'" @submit.prevent="handleResetPassword" class="space-y-4">
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Registered Email Address</label>
+                        <input type="email" x-model="authResetForm.email" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="you@example.com" required>
+                    </div>
+                    <div>
+                        <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">New Password</label>
+                        <input type="password" x-model="authResetForm.new_password" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="••••••••" required>
+                    </div>
+
+                    <button type="submit" :disabled="authLoading" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm px-4 py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider mt-2 disabled:opacity-50">
+                        <span x-text="authLoading ? 'Updating...' : 'Update Password'"></span>
+                    </button>
+                </form>
+
+                <div class="mt-6 text-center text-xs text-slate-400">
+                    <template x-if="authViewMode === 'login'">
+                        <p>Need an account? <button @click="authViewMode = 'signup'; authError = ''; authSuccess = '';" class="font-bold text-purple-400 hover:text-purple-300 ml-1">Sign up here</button></p>
+                    </template>
+                    <template x-if="authViewMode === 'signup'">
+                        <p>Already have an account? <button @click="authViewMode = 'login'; authError = ''; authSuccess = '';" class="font-bold text-purple-400 hover:text-purple-300 ml-1">Log in here</button></p>
+                    </template>
+                    <template x-if="authViewMode === 'reset'">
+                        <p>Remembered your credentials? <button @click="authViewMode = 'login'; authError = ''; authSuccess = '';" class="font-bold text-purple-400 hover:text-purple-300 ml-1">Back to Login</button></p>
+                    </template>
+                </div>
+            </div>
+        </div>
+
+        <div x-show="currentView === 'home'" x-transition class="space-y-12">
+            <div class="text-center space-y-6 max-w-3xl mx-auto py-6 relative z-10">
+                <div class="inline-flex items-center gap-2 bg-white/[0.04] border border-white/10 px-4 py-1.5 rounded-full text-xs font-black tracking-widest text-slate-400 uppercase shadow-inner"><span class="w-2 h-2 bg-emerald-400 rounded-full animate-ping"></span> ONLINE LEARNING ECOSYSTEM READY</div>
+                <h1 class="text-4xl md:text-6xl font-black tracking-tight leading-none text-white">Break Complex Concepts Down Into <span class="bg-gradient-to-r bg-clip-text text-transparent bg-gradient-to-r from-purple-400 via-pink-400 to-cyan-400">Simple Ideas</span></h1>
+                <p class="text-base text-slate-400 max-w-2xl mx-auto font-medium">Select a field down below or click the master button to launch your personalized learning board right away.</p>
+                
+                <div class="pt-4">
+                    <button @click="currentView = 'workspace'" class="bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm px-8 py-4 rounded-xl shadow-lg hover:scale-105 transition-all uppercase tracking-wider">
+                        🚀 Open Workspace Hub
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 relative z-10">
+                <div @click="setSubject('chemistry'); currentView = 'workspace';" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-emerald-500/30 group cursor-pointer space-y-4 shadow-xl"><div class="w-12 h-12 rounded-xl bg-emerald-500/10 border border-emerald-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🧪</div><div><h3 class="text-lg font-bold text-slate-200 group-hover:text-emerald-400 transition-colors">Chemistry Lab</h3><p class="text-xs text-slate-400 mt-1 leading-relaxed">Deconstruct molecular reactions, functional carbon chains, and orbital equilibrium models.</p></div></div>
+                <div @click="setSubject('math'); currentView = 'workspace';" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-rose-500/30 group cursor-pointer space-y-4 shadow-xl"><div class="w-12 h-12 rounded-xl bg-rose-500/10 border border-rose-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">📐</div><div><h3 class="text-lg font-bold text-slate-200 group-hover:text-rose-400 transition-colors">Mathematics</h3><p class="text-xs text-slate-400 mt-1 leading-relaxed">Map analytical limit proofs, differential vectors, and algorithmic geometries visually.</p></div></div>
+                <div @click="setSubject('space'); currentView = 'workspace';" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-cyan-500/30 group cursor-pointer space-y-4 shadow-xl"><div class="w-12 h-12 rounded-xl bg-cyan-500/10 border border-cyan-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">🌌</div><div><h3 class="text-lg font-bold text-slate-200 group-hover:text-cyan-400 transition-colors">Space Science</h3><p class="text-xs text-slate-400 mt-1 leading-relaxed">Calculate tidal singularities, accretion vectors, and event horizon spaghettification bounds.</p></div></div>
+                <div @click="setSubject('general'); currentView = 'workspace';" class="glass-panel p-6 rounded-2xl border border-white/5 hover:border-purple-500/30 group cursor-pointer space-y-4 shadow-xl"><div class="w-12 h-12 rounded-xl bg-purple-500/10 border border-purple-500/20 flex items-center justify-center text-2xl group-hover:scale-110 transition-transform">💠</div><div><h3 class="text-lg font-bold text-slate-200 group-hover:text-purple-400 transition-colors">General Studies</h3><p class="text-xs text-slate-400 mt-1 leading-relaxed">Ingest any public general text topic layer to map educational frameworks instantly.</p></div></div>
+            </div>
+        </div>
+
+        <div x-show="currentView === 'workspace'" x-transition class="space-y-8">
+            <div class="glass-panel p-6 rounded-2xl border border-white/10 shadow-2xl relative overflow-hidden bg-slate-950/50">
+                <div class="grid grid-cols-1 lg:grid-cols-12 gap-6 items-end relative z-10">
+                    <div class="lg:col-span-4 space-y-2">
+                        <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block">🎯 TARGET TOPIC</label>
+                        <div class="relative">
+                            <input type="text" x-model="topic" placeholder="e.g., Quantum Physics..." 
+                                   class="w-full bg-slate-950/80 border text-sm rounded-xl px-4 py-3 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 transition-all"
+                                   :class="themeConfig.borderAccent.split(' ')[0]">
+                        </div>
+                    </div>
+                    <div class="lg:col-span-2 space-y-2">
+                        <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block">🧠 STYLE</label>
+                        <select x-model="profile" class="w-full bg-slate-950/80 border border-white/10 text-sm rounded-xl px-3 py-3 text-slate-200 focus:outline-none transition-all">
+                            <option value="ELI5">ELI5 (Simple)</option>
+                            <option value="Standard Student">Standard Student</option>
+                            <option value="Tech Executive">Executive Summary</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-2 space-y-2">
+                        <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block">📏 LENGTH</label>
+                        <select x-model="explLength" class="w-full bg-slate-950/80 border border-white/10 text-sm rounded-xl px-3 py-3 text-slate-200 focus:outline-none transition-all">
+                            <option value="Short">Short</option>
+                            <option value="Standard">Standard</option>
+                            <option value="Comprehensive">Comprehensive</option>
+                        </select>
+                    </div>
+                    <div class="lg:col-span-2 space-y-2">
+                        <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block" x-text="'📊 L: ' + currentDepth"></label>
+                        <input type="range" min="0" max="2" x-model="depthIndex" class="w-full accent-purple-500 h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer border border-white/5 pb-2">
+                    </div>
+                    <div class="lg:col-span-2">
+                        <button @click="activeMode === 'alchemist' ? triggerMorph() : triggerForge()" 
+                                class="w-full text-white text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02]"
+                                :class="themeConfig.buttonBg">
+                            <span x-text="activeMode === 'alchemist' ? '⚒️ BUILD EXPLANATION' : '⚡ CREATE TEST'"></span>
+                        </button>
+                    </div>
+                </div>
+                
+                <div class="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t border-white/5 text-xs">
+                    <div class="flex gap-4">
+                        <button @click="activeMode = 'alchemist'" class="pb-2 px-1 font-black uppercase tracking-widest transition-all relative" :class="activeMode === 'alchemist' ? themeConfig.textAccent : 'text-slate-500 hover:text-slate-300'">
+                            🔬 Interactive Study Guide
+                            <span x-show="activeMode === 'alchemist'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" :class="themeConfig.buttonBg"></span>
+                        </button>
+                        <button @click="activeMode = 'forge'" class="pb-2 px-1 font-black uppercase tracking-widest transition-all relative" :class="activeMode === 'forge' ? themeConfig.textAccent : 'text-slate-500 hover:text-slate-300'">
+                            ⚔️ Practice & Testing Zone
+                            <span x-show="activeMode === 'forge'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" :class="themeConfig.buttonBg"></span>
+                        </button>
+                    </div>
+
+                    <div x-show="activeMode === 'forge'" x-transition class="flex items-center gap-3 bg-slate-900/60 p-1.5 rounded-xl border border-white/5">
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-500 uppercase font-black pl-1">Format:</span>
+                            <select x-model="evalType" class="bg-slate-950 text-xs rounded-lg px-2 py-1 text-slate-200 border border-white/5 focus:outline-none">
+                                <option value="Quiz">Multiple Choice Quiz</option>
+                                <option value="Flashcards">Active Flashcards</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-500 uppercase font-black">Difficulty:</span>
+                            <select x-model="difficulty" class="bg-slate-950 text-xs rounded-lg px-2 py-1 text-slate-200 border border-white/5 focus:outline-none">
+                                <option value="Beginner">Beginner</option>
+                                <option value="Intermediate">Intermediate</option>
+                                <option value="Advanced">Advanced</option>
+                            </select>
+                        </div>
+                        <div class="flex items-center gap-1.5">
+                            <span class="text-[10px] text-slate-500 uppercase font-black">Count:</span>
+                            <input type="number" x-model.number="evalCount" min="1" max="50" class="bg-slate-950 text-xs rounded-lg px-2 py-1 text-slate-200 border border-white/5 focus:outline-none w-16">
+                        </div>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="activeMode === 'alchemist'" class="space-y-8" x-transition>
+                <div x-show="errorAlchemist" class="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-3">❌ <span x-text="errorAlchemist"></span></div>
+
+                <div x-show="loadingAlchemist" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div class="lg:col-span-7 space-y-6">
+                        <div class="glass-panel p-6 rounded-2xl h-96 shimmer"></div>
+                    </div>
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="glass-panel p-6 rounded-2xl h-64 shimmer"></div>
+                        <div class="glass-panel p-6 rounded-2xl h-28 shimmer"></div>
+                    </div>
+                </div>
+
+                <div x-show="!loadingAlchemist && alchemistResult" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
+                    <div class="lg:col-span-7 space-y-6 flex flex-col">
+                        <div class="glass-panel p-6 rounded-2xl border border-white/5 shadow-2xl space-y-6 bg-slate-950/40 relative flex-1">
+                            <div class="flex items-center justify-between border-b border-white/5 pb-4">
+                                <div class="flex items-center gap-3">
+                                    <span class="text-xl">🔬</span>
+                                    <div>
+                                        <h2 class="text-base font-extrabold text-slate-100 uppercase tracking-wider">Detailed Explanation</h2>
+                                        <p class="text-[11px] text-slate-500" x-text="'Style: ' + profile + ' • Length: ' + explLength"></p>
+                                    </div>
+                                </div>
+                                <div class="flex gap-1 bg-slate-900/80 p-1 rounded-lg border border-white/5">
+                                    <template x-for="(sub, idx) in alchemistResult.subsections" :key="idx">
+                                        <button @click="activeSubsectionIndex = idx" 
+                                                class="px-2.5 py-1 rounded text-[11px] font-black transition-all"
+                                                :class="activeSubsectionIndex === idx ? themeConfig.buttonBg + ' text-white' : 'text-slate-400 hover:bg-white/5'"
+                                                x-text="idx + 1"></button>
+                                    </template>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 text-sm leading-relaxed text-slate-300 custom-scrollbar overflow-y-auto pr-2 bg-slate-950/60 p-4 rounded-xl border border-white/5" style="max-height: 500px; scroll-behavior: smooth;">
+                                <template x-for="(sub, idx) in alchemistResult.subsections" :key="idx">
+                                    <div x-show="activeSubsectionIndex === idx" x-transition:enter="transition ease-out duration-200" class="space-y-4">
+                                        <h3 class="text-lg font-bold text-slate-100 border-b border-white/5 pb-1" x-text="sub.title"></h3>
+                                        <div class="prose prose-invert max-w-none text-slate-300 text-sm leading-relaxed">
+                                            <p class="whitespace-pre-wrap font-medium" x-html="formatMathSyntax(sub.content)"></p>
+                                        </div>
+                                    </div>
+                                </template>
+                            </div>
+                        </div>
+
+                        <div class="glass-panel p-4 rounded-xl border border-white/5 bg-slate-950/60 flex items-center justify-between gap-4">
+                            <div class="flex items-center gap-3">
+                                <button @click="showVideoLecturer = true; toggleVideoPlayback();" class="w-10 h-10 rounded-full flex items-center justify-center text-xs shadow-md transition-transform hover:scale-105" :class="videoPlaying ? 'bg-amber-600 text-white animate-pulse' : themeConfig.buttonBg">
+                                    <span x-text="videoPlaying ? '⏸' : '▶'"></span>
+                                </button>
+                                <div>
+                                    <h4 class="text-xs font-extrabold text-slate-200">AI Audio Companion Stream</h4>
+                                    <p class="text-[10px] text-slate-500" x-text="videoPlaying ? 'Streaming audio overview explanation...' : 'Audio track prepared'"></p>
+                                </div>
+                            </div>
+                            <div class="flex-1 max-w-xs bg-slate-900 h-1.5 rounded-full overflow-hidden relative">
+                                <div class="h-full bg-gradient-to-r from-purple-500 to-cyan-400 transition-all duration-300" :style="'width: ' + videoProgress + '%'"></div>
+                            </div>
+                        </div>
+                        
+                        <div x-show="showVideoLecturer" x-transition class="glass-panel p-4 rounded-xl border border-white/10 bg-slate-950/90 space-y-3">
+                            <div class="flex items-center justify-between border-b border-white/5 pb-2 text-xs">
+                                <span class="font-bold tracking-wider uppercase" :class="themeConfig.textAccent">🎙️ Audio Reader Feed</span>
+                                <button @click="stopVideoLecture()" class="text-slate-500 hover:text-slate-300 text-[10px]">CLOSE</button>
+                            </div>
+                            <div class="grid grid-cols-1 md:grid-cols-12 gap-4 items-center">
+                                <div class="md:col-span-3 h-24 bg-slate-900 border border-white/5 rounded-lg flex flex-col items-center justify-center relative overflow-hidden">
+                                    <div x-show="videoPlaying" class="absolute inset-0 flex items-end justify-between p-2 pointer-events-none">
+                                        <div class="audio-bar w-1 bg-purple-500 rounded-full" style="animation-delay: 0.1s"></div>
+                                        <div class="audio-bar w-1 bg-cyan-400 rounded-full" style="animation-delay: 0.3s"></div>
+                                        <div class="audio-bar w-1 bg-pink-500 rounded-full" style="animation-delay: 0.2s"></div>
+                                        <div class="audio-bar w-1 bg-emerald-400 rounded-full" style="animation-delay: 0.4s"></div>
+                                        <div class="audio-bar w-1 bg-amber-400 rounded-full" style="animation-delay: 0.15s"></div>
+                                    </div>
+                                    <span class="text-2xl select-none">🤖</span>
+                                    <span class="text-[9px] font-mono tracking-widest text-slate-500 uppercase mt-1">Reader</span>
+                                </div>
+                                <div class="md:col-span-9 bg-slate-950/60 p-3 rounded-lg border border-white/5 h-24 flex items-center justify-center text-center">
+                                    <p class="text-xs text-slate-300 italic font-medium leading-relaxed" x-text="activeSubtitles[mockSubtitleIndex] || 'Reading through the current material blocks...'"></p>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+
+                    <div class="lg:col-span-5 space-y-6">
+                        <div class="glass-panel p-6 rounded-2xl border border-white/5 shadow-2xl space-y-6 bg-slate-950/60 relative">
+                            <div class="border-b border-white/5 pb-3">
+                                <h3 class="text-xs font-black tracking-widest text-slate-400 uppercase">Interactive Concept Canvas</h3>
+                            </div>
+
+                            <div class="w-full h-48 bg-slate-950/90 rounded-xl border border-white/5 relative overflow-hidden flex items-center justify-center shadow-inner">
+                                <div x-show="activeTheme === 'math'" class="absolute inset-0 flex flex-col justify-between p-2 pointer-events-none font-mono text-[9px] text-slate-600 select-none">
+                                    <div class="w-full flex justify-between"><span>y: 100</span><span>Function mapping canvas</span><span>y: 100</span></div>
+                                    <div class="absolute inset-0 flex items-center justify-center">
+                                        <div class="w-full h-px bg-slate-800/60"></div>
+                                        <div class="h-full w-px bg-slate-800/60 absolute"></div>
+                                        <svg class="absolute inset-0 w-full h-full" xmlns="http://www.w3.org/2000/svg">
+                                            <path :d="`M 0 96 Q ${simSliderA * 2.5} ${simSliderB * 1.5}, 350 96`" fill="none" stroke="#f43f5e" stroke-width="2.5" class="transition-all duration-150" />
+                                            <circle :cx="simSliderA * 2.5" :cy="simSliderB * 1.5" r="5" fill="#f97316" class="transition-all duration-150" />
+                                        </svg>
+                                    </div>
+                                    <div class="w-full flex justify-between"><span>y: -100</span><span>Center Axis Bounds</span><span>y: -100</span></div>
+                                </div>
+
+                                <div x-show="activeTheme === 'chemistry'" class="absolute inset-0 flex items-center justify-center">
+                                    <div class="relative w-32 h-32 flex items-center justify-center">
+                                        <div class="absolute rounded-full border border-dashed border-emerald-500/20 animate-spin" :style="`width: ${simSliderA * 1.2}px; height: ${simSliderA * 1.2}px; animation-duration: 12s;`"></div>
+                                        <div class="absolute rounded-full border border-teal-400/30" :style="`width: ${simSliderB * 1.8}px; height: ${simSliderB * 1.8}px;`"></div>
+                                        <div class="w-8 h-8 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 text-slate-950 font-black text-[10px] flex items-center justify-center shadow-lg shadow-emerald-950/50">C_12</div>
+                                    </div>
+                                </div>
+
+                                <div x-show="activeTheme === 'space'" class="absolute inset-0 flex items-center justify-center bg-radial-gradient">
+                                    <div class="w-12 h-12 bg-black rounded-full shadow-[0_0_30px_rgba(168,85,247,0.6)] z-10 border border-purple-500/30"></div>
+                                    <div class="absolute border-2 border-cyan-400/20 rounded-full animate-ping" :style="`width: ${simSliderA * 1.5}px; height: ${simSliderA * 1.5}px; animation-duration: 3s;`"></div>
+                                </div>
+
+                                <div x-show="activeTheme === 'general'" class="absolute inset-0 flex items-center justify-center p-4 text-center">
+                                    <div class="p-3 bg-purple-500/10 border border-purple-500/20 rounded-xl">
+                                        <span class="text-2xl">💠</span>
+                                        <p class="text-[10px] text-purple-300 font-mono mt-1">Universal Simulation Controller</p>
+                                    </div>
+                                </div>
+                            </div>
+
+                            <div class="space-y-4 bg-slate-900/40 p-4 rounded-xl border border-white/5">
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-[11px] font-mono text-slate-400">
+                                        <span>CONTROL VARIABLE A</span>
+                                        <span class="font-bold" :class="themeConfig.textAccent" x-text="simSliderA"></span>
+                                    </div>
+                                    <input type="range" min="10" max="100" x-model="simSliderA" class="w-full accent-purple-500 h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div class="space-y-1">
+                                    <div class="flex justify-between text-[11px] font-mono text-slate-400">
+                                        <span>CONTROL VARIABLE B</span>
+                                        <span class="font-bold" :class="themeConfig.textAccent" x-text="simSliderB"></span>
+                                    </div>
+                                    <input type="range" min="10" max="100" x-model="simSliderB" class="w-full accent-purple-500 h-1 bg-slate-950 rounded-lg appearance-none cursor-pointer">
+                                </div>
+                                <div class="p-3 bg-slate-950/80 rounded-xl border border-white/5 text-xs text-slate-300">
+                                    <p x-text="liveInteractiveExplanation" class="leading-relaxed"></p>
+                                </div>
+                            </div>
+                        </div>
+
+                        <template x-if="alchemistResult && alchemistResult.subsections && alchemistResult.subsections[activeSubsectionIndex] && alchemistResult.subsections[activeSubsectionIndex].checkpoint">
+                            <div class="glass-panel p-6 rounded-2xl border border-white/5 shadow-2xl space-y-4 bg-slate-950/60">
+                                <h3 class="text-xs font-black tracking-widest text-slate-400 uppercase">⚡ Subsection Checkpoint</h3>
+                                <p class="text-xs font-bold text-slate-200" x-text="alchemistResult.subsections[activeSubsectionIndex].checkpoint.question"></p>
+                                <div class="space-y-2">
+                                    <template x-for="(opt, oIdx) in alchemistResult.subsections[activeSubsectionIndex].checkpoint.options" :key="oIdx">
+                                        <button @click="quizAnswers['sub_' + activeSubsectionIndex] = oIdx; quizSubmitted['sub_' + activeSubsectionIndex] = true"
+                                                class="w-full text-left p-2.5 rounded-xl text-xs border transition-all"
+                                                :class="quizSubmitted['sub_' + activeSubsectionIndex] ? (oIdx === alchemistResult.subsections[activeSubsectionIndex].checkpoint.correct_index ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300' : (quizAnswers['sub_' + activeSubsectionIndex] === oIdx ? 'bg-rose-950/50 border-rose-500/50 text-rose-300' : 'bg-slate-900/40 border-white/5 text-slate-400')) : 'bg-slate-900/60 border-white/5 hover:border-white/20 text-slate-300'">
+                                            <span x-text="String.fromCharCode(65 + oIdx) + '. ' + opt"></span>
+                                        </button>
+                                    </template>
+                                </div>
+                                <template x-if="quizSubmitted['sub_' + activeSubsectionIndex]">
+                                    <p class="text-[11px] p-2.5 rounded-xl bg-white/5 border border-white/10 text-slate-300" x-text="alchemistResult.subsections[activeSubsectionIndex].checkpoint.explanation"></p>
+                                </template>
+                            </div>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="activeMode === 'forge'" class="space-y-8" x-transition>
+                <div x-show="errorForge" class="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-3">❌ <span x-text="errorForge"></span></div>
+                
+                <div x-show="loadingForge" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl h-48 shimmer"></div>
+                    <div class="glass-panel p-6 rounded-2xl h-48 shimmer"></div>
+                </div>
+
+                <div x-show="!loadingForge && forgeItems.length > 0" class="space-y-6">
+                    <template x-if="evalType === 'Quiz'">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <template x-for="(item, qIdx) in forgeItems" :key="qIdx">
+                                <div class="glass-panel p-6 rounded-2xl border border-white/5 bg-slate-950/60 space-y-4">
+                                    <div class="flex items-center justify-between text-xs font-mono text-slate-500">
+                                        <span x-text="'QUESTION ' + (qIdx + 1)"></span>
+                                        <span class="text-purple-400 font-bold" x-text="difficulty"></span>
+                                    </div>
+                                    <p class="text-xs font-bold text-slate-100" x-text="item.question"></p>
+                                    <div class="space-y-2">
+                                        <template x-for="(opt, oIdx) in item.options" :key="oIdx">
+                                            <button @click="quizAnswers[qIdx] = oIdx; quizSubmitted[qIdx] = true; totalAnswered++; if(oIdx === item.correct_index) totalCorrect++;"
+                                                    :disabled="quizSubmitted[qIdx]"
+                                                    class="w-full text-left p-2.5 rounded-xl text-xs border transition-all"
+                                                    :class="quizSubmitted[qIdx] ? (oIdx === item.correct_index ? 'bg-emerald-950/50 border-emerald-500/50 text-emerald-300' : (quizAnswers[qIdx] === oIdx ? 'bg-rose-950/50 border-rose-500/50 text-rose-300' : 'bg-slate-900/40 border-white/5 text-slate-400')) : 'bg-slate-900/60 border-white/5 hover:border-white/20 text-slate-300'">
+                                                <span x-text="String.fromCharCode(65 + oIdx) + '. ' + opt"></span>
+                                            </button>
+                                        </template>
+                                    </div>
+                                    <template x-if="quizSubmitted[qIdx]">
+                                        <div class="p-3 rounded-xl bg-white/5 border border-white/10 text-xs text-slate-300 space-y-1">
+                                            <span class="font-bold" :class="quizAnswers[qIdx] === item.correct_index ? 'text-emerald-400' : 'text-rose-400'" x-text="quizAnswers[qIdx] === item.correct_index ? '✓ Correct Answer' : '✗ Incorrect Choice'"></span>
+                                            <p class="text-[11px] text-slate-400" x-text="item.explanation"></p>
+                                        </div>
+                                    </template>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+
+                    <template x-if="evalType === 'Flashcards'">
+                        <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                            <template x-for="(item, fIdx) in forgeItems" :key="fIdx">
+                                <div x-data="{ flipped: false }" @click="flipped = !flipped" class="glass-panel p-6 rounded-2xl border border-white/5 bg-slate-950/60 h-48 cursor-pointer flex flex-col justify-between hover:border-purple-500/40 transition-all select-none">
+                                    <div class="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                                        <span x-text="'FLASHCARD ' + (fIdx + 1)"></span>
+                                        <span class="text-purple-400 font-bold" x-text="flipped ? 'BACK (ANSWER)' : 'FRONT (QUESTION)'"></span>
+                                    </div>
+                                    <div class="text-center my-auto">
+                                        <p x-show="!flipped" class="text-xs font-bold text-slate-100" x-text="item.front"></p>
+                                        <p x-show="flipped" class="text-xs font-medium text-purple-300" x-text="item.back"></p>
+                                    </div>
+                                    <p class="text-[10px] text-slate-500 text-center uppercase tracking-wider font-mono">Click to flip card 🔄</p>
+                                </div>
+                            </template>
+                        </div>
+                    </template>
+                </div>
+            </div>
+        </div>
+    </main>
+</body>
+</html>
