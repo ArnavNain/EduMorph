@@ -14,6 +14,24 @@
         };
     </script>
     <style>
+        /* Base & Theme Transitions */
+        body { transition: background-color 0.4s ease, color 0.4s ease; }
+        
+        /* Light Mode Overrides (Preserves structural classes without breaking functionality) */
+        body.light-theme {
+            background-color: #f8fafc !important;
+            color: #0f172a !important;
+        }
+        body.light-theme .bg-slate-950, body.light-theme .bg-slate-950\/60, body.light-theme .bg-slate-950\/80, body.light-theme .bg-slate-950\/90 { background-color: #ffffff !important; }
+        body.light-theme .bg-slate-900, body.light-theme .bg-slate-900\/40, body.light-theme .bg-slate-900\/60, body.light-theme .bg-slate-900\/80 { background-color: #f1f5f9 !important; }
+        body.light-theme .text-slate-100 { color: #0f172a !important; }
+        body.light-theme .text-slate-200, body.light-theme .text-slate-300 { color: #1e293b !important; }
+        body.light-theme .text-slate-400, body.light-theme .text-slate-500 { color: #475569 !important; }
+        body.light-theme .border-white\/5, body.light-theme .border-white\/10, body.light-theme .border-white\/20 { border-color: rgba(0, 0, 0, 0.08) !important; }
+        body.light-theme .bg-white\/5 { background-color: rgba(0, 0, 0, 0.03) !important; }
+        body.light-theme .glass-panel { background: rgba(255, 255, 255, 0.85) !important; border: 1px solid rgba(0, 0, 0, 0.08) !important; box-shadow: 0 10px 30px -10px rgba(0, 0, 0, 0.1); }
+        body.light-theme .theme-grid-general, body.light-theme .theme-grid-math, body.light-theme .theme-grid-chemistry, body.light-theme .theme-grid-space { opacity: 0.3 !important; }
+
         .glass-panel {
             background: rgba(10, 15, 30, 0.75);
             backdrop-filter: blur(28px);
@@ -25,6 +43,10 @@
             background: linear-gradient(90deg, rgba(255,255,255,0.01) 25%, rgba(255,255,255,0.05) 50%, rgba(255,255,255,0.01) 75%);
             background-size: 200% 100%;
             animation: loading-shimmer 1.8s infinite linear;
+        }
+        body.light-theme .shimmer {
+            background: linear-gradient(90deg, rgba(0,0,0,0.03) 25%, rgba(0,0,0,0.08) 50%, rgba(0,0,0,0.03) 75%);
+            background-size: 200% 100%;
         }
         @keyframes loading-shimmer {
             0% { background-position: 200% 0; }
@@ -90,9 +112,74 @@
         }
         .audio-bar { animation: dynamic-audio 0.4s infinite ease-in-out; }
         .animate-blackhole { animation: blackhole-spin 12s infinite linear; }
+
+        /* Dark/Light Mode Slider Component */
+        .switch-container { position: relative; display: inline-block; width: 46px; height: 24px; margin-right: 12px; }
+        .switch-container .toggle-checkbox { display: none; }
+        .switch-container .switch { position: absolute; cursor: pointer; top: 0; left: 0; right: 0; bottom: 0; background-color: rgba(255,255,255,0.1); transition: .4s; border-radius: 24px; border: 1px solid rgba(255,255,255,0.15); box-shadow: inset 0 2px 4px rgba(0,0,0,0.3); }
+        body.light-theme .switch-container .switch { background-color: #cbd5e1; border-color: #94a3b8; box-shadow: inset 0 2px 4px rgba(0,0,0,0.1); }
+        .switch-container .toggle { position: absolute; content: ""; height: 16px; width: 16px; left: 3px; bottom: 3px; background-color: #0f172a; transition: .4s; border-radius: 50%; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 4px rgba(0,0,0,0.4); }
+        body.light-theme .switch-container .toggle { background-color: #ffffff; transform: translateX(22px); box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+        .switch-container .led { width: 6px; height: 6px; border-radius: 50%; background-color: #38bdf8; transition: .4s; box-shadow: 0 0 4px #38bdf8, 0 0 8px #38bdf8; }
+        body.light-theme .switch-container .led { background-color: #fbbf24; box-shadow: 0 0 4px #fbbf24, 0 0 8px #fbbf24; }
+
+        /* Cookie Consent Pop-up Component */
+        .cookie-overlay {
+            position: fixed; inset: 0; z-index: 99999;
+            background: rgba(2, 6, 23, 0.7);
+            backdrop-filter: blur(8px);
+            display: flex; align-items: center; justify-content: center;
+            padding: 1rem;
+        }
+        body.light-theme .cookie-overlay { background: rgba(248, 250, 252, 0.7); }
+        .cookie-card {
+            width: 100%; max-width: 340px;
+            background-color: rgba(15, 23, 42, 0.95);
+            border: 1px solid rgba(255,255,255,0.1);
+            border-radius: 1.5rem;
+            padding: 2.5rem 1.5rem;
+            text-align: center;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(20px);
+            animation: popIn 0.5s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+        }
+        body.light-theme .cookie-card {
+            background-color: rgba(255, 255, 255, 0.95);
+            border: 1px solid rgba(0,0,0,0.1);
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.15);
+        }
+        @keyframes popIn { 0% { transform: scale(0.8) translateY(20px); opacity: 0; } 100% { transform: scale(1) translateY(0); opacity: 1; } }
+        .cookie-card svg { width: 60px; height: 60px; fill: #fbbf24; margin: 0 auto 1.25rem; filter: drop-shadow(0 4px 10px rgba(251, 191, 36, 0.3)); }
+        .cookieHeading { font-size: 1.35rem; font-weight: 900; color: #f8fafc; margin-bottom: 0.5rem; letter-spacing: -0.025em; }
+        body.light-theme .cookieHeading { color: #0f172a; }
+        .cookieDescription { font-size: 0.8rem; color: #94a3b8; margin-bottom: 2rem; line-height: 1.6; }
+        body.light-theme .cookieDescription { color: #475569; }
+        .cookieButtonContainer { display: flex; gap: 0.75rem; justify-content: center; }
+        .acceptCookieButton {
+            background: linear-gradient(to right, #a855f7, #06b6d4);
+            color: white; border: none; padding: 0.75rem 1.2rem;
+            border-radius: 0.75rem; font-size: 0.75rem; font-weight: 800;
+            cursor: pointer; flex: 1; transition: transform 0.2s, opacity 0.2s;
+            text-transform: uppercase; letter-spacing: 0.05em;
+            box-shadow: 0 4px 15px rgba(168, 85, 247, 0.4);
+        }
+        .acceptCookieButton:hover { opacity: 0.9; transform: scale(1.02); }
+        .declineCookieButton {
+            background: rgba(255,255,255,0.05); color: #cbd5e1;
+            border: 1px solid rgba(255,255,255,0.1); padding: 0.75rem 1.2rem;
+            border-radius: 0.75rem; font-size: 0.75rem; font-weight: 800;
+            cursor: pointer; flex: 1; transition: all 0.2s;
+            text-transform: uppercase; letter-spacing: 0.05em;
+        }
+        body.light-theme .declineCookieButton {
+            background: rgba(0,0,0,0.03); color: #475569; border-color: rgba(0,0,0,0.1);
+        }
+        .declineCookieButton:hover { background: rgba(255,255,255,0.1); color: white; }
+        body.light-theme .declineCookieButton:hover { background: rgba(0,0,0,0.08); color: #0f172a; }
     </style>
 </head>
 <body class="bg-slate-950 text-slate-100 min-h-screen font-sans antialiased selection:bg-purple-500 selection:text-white relative overflow-x-hidden"
+      :class="{ 'light-theme': isLightMode }"
       x-data="{ 
         currentView: 'home', 
         menuOpen: false,
@@ -141,8 +228,57 @@
         videoProgress: 0,
         videoInterval: null,
         mockSubtitleIndex: 0,
-        
+
+        isLightMode: false,
+        cookieConsentStatus: true,
+
+        toasts: [],
+        toastSeq: 0,
+
+        loadingVerify: false,
+        verifyResult: null,
+        errorVerify: '',
+        verifyNoSources: false,
+
+        loadingResources: false,
+        resourceItems: [],
+        errorResources: '',
+        resourcesNoSources: false,
+
         get currentDepth() { return this.depths[this.depthIndex]; },
+        get authNameError() {
+            if (this.authViewMode !== 'signup' || !this.authForm.name) return '';
+            return this.authForm.name.trim().length < 2 ? 'Name must be at least 2 characters.' : '';
+        },
+        get authEmailError() {
+            const val = this.authViewMode === 'reset' ? this.authResetForm.email : this.authForm.email;
+            if (!val) return '';
+            const pattern = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+            return pattern.test(val) ? '' : 'Enter a valid email address.';
+        },
+        get authPasswordError() {
+            // Only enforce a minimum length when a NEW password is being created
+            // (signup/reset) - a login attempt should never be blocked client-side
+            // just because an existing account password happens to be shorter.
+            if (this.authViewMode === 'reset') {
+                const val = this.authResetForm.new_password;
+                if (!val) return '';
+                return val.length < 6 ? 'Password must be at least 6 characters.' : '';
+            }
+            if (this.authViewMode === 'signup') {
+                const val = this.authForm.password;
+                if (!val) return '';
+                return val.length < 6 ? 'Password must be at least 6 characters.' : '';
+            }
+            return '';
+        },
+        get authFormValid() {
+            if (this.authViewMode === 'reset') {
+                return this.authResetForm.email && this.authResetForm.new_password && !this.authEmailError && !this.authPasswordError;
+            }
+            const nameOk = this.authViewMode !== 'signup' || (this.authForm.name && !this.authNameError);
+            return nameOk && this.authForm.email && this.authForm.password && !this.authEmailError && !this.authPasswordError;
+        },
         get performancePercentage() {
             if(this.totalAnswered === 0) return 0;
             return Math.round((this.totalCorrect / this.totalAnswered) * 100);
@@ -224,12 +360,45 @@
         },
 
         init() {
+            this.isLightMode = localStorage.getItem('edumorph_theme') === 'light';
+            
+            if (localStorage.getItem('edumorph_cookie') === null) {
+                this.cookieConsentStatus = false;
+            } else {
+                this.cookieConsentStatus = true;
+            }
+
             this.historyList = JSON.parse(localStorage.getItem('edumorph_history') || '[]');
             const storedUser = localStorage.getItem('edumorph_user');
             if (storedUser) {
                 this.user = JSON.parse(storedUser);
                 this.isLoggedIn = true;
             }
+
+            // Restore last-used study/quiz settings so returning users don't
+            // have to re-pick them every session.
+            try {
+                const storedPrefs = JSON.parse(localStorage.getItem('edumorph_prefs') || '{}');
+                if (storedPrefs.profile) this.profile = storedPrefs.profile;
+                if (storedPrefs.explLength) this.explLength = storedPrefs.explLength;
+                if (typeof storedPrefs.depthIndex === 'number') this.depthIndex = storedPrefs.depthIndex;
+                if (storedPrefs.evalType) this.evalType = storedPrefs.evalType;
+                if (storedPrefs.difficulty) this.difficulty = storedPrefs.difficulty;
+                if (typeof storedPrefs.evalCount === 'number') this.evalCount = storedPrefs.evalCount;
+            } catch (e) { /* ignore malformed local storage */ }
+
+            this.$watch('profile', () => this.persistPrefs());
+            this.$watch('explLength', () => this.persistPrefs());
+            this.$watch('depthIndex', () => this.persistPrefs());
+            this.$watch('evalType', () => this.persistPrefs());
+            this.$watch('difficulty', () => this.persistPrefs());
+            this.$watch('evalCount', () => this.persistPrefs());
+
+            window.addEventListener('keydown', (e) => {
+                if (e.key !== 'Escape') return;
+                if (this.showVideoLecturer) { this.stopVideoLecture(); return; }
+                if (this.menuOpen) { this.menuOpen = false; return; }
+            });
 
             const cfg = window.__SUPABASE_CONFIG__ || {};
             if (window.supabase && cfg.url && cfg.anonKey) {
@@ -246,9 +415,6 @@
                     }
                 );
 
-                // Eagerly restore any session Supabase already has persisted
-                // (covers the case where the async onAuthStateChange
-                // INITIAL_SESSION event fires later or gets missed).
                 this.supabaseClient.auth.getSession().then(({ data }) => {
                     this.applySupabaseSession(data.session);
                 });
@@ -263,6 +429,41 @@
                     this.applySupabaseSession(session);
                 });
             }
+        },
+
+        toggleThemeMode() {
+            localStorage.setItem('edumorph_theme', this.isLightMode ? 'light' : 'dark');
+        },
+
+        persistPrefs() {
+            localStorage.setItem('edumorph_prefs', JSON.stringify({
+                profile: this.profile,
+                explLength: this.explLength,
+                depthIndex: this.depthIndex,
+                evalType: this.evalType,
+                difficulty: this.difficulty,
+                evalCount: this.evalCount
+            }));
+        },
+
+        showToast(message, type = 'info') {
+            const id = ++this.toastSeq;
+            this.toasts.push({ id, message, type });
+            setTimeout(() => this.removeToast(id), 4500);
+        },
+
+        removeToast(id) {
+            this.toasts = this.toasts.filter(t => t.id !== id);
+        },
+
+        acceptCookies() {
+            this.cookieConsentStatus = true;
+            localStorage.setItem('edumorph_cookie', 'accepted');
+        },
+
+        declineCookies() {
+            this.cookieConsentStatus = true;
+            localStorage.setItem('edumorph_cookie', 'declined');
         },
 
         applySupabaseSession(session) {
@@ -301,11 +502,14 @@
                     localStorage.setItem('edumorph_user', JSON.stringify(data.user));
                     this.currentView = 'home';
                     this.authForm = { name: '', email: '', password: '' };
+                    this.showToast(`Welcome, ${data.user.name}!`, 'success');
                 } else {
                     this.authError = data.error || 'Authentication failed.';
+                    this.showToast(this.authError, 'error');
                 }
             } catch (err) {
                 this.authError = 'Network error connecting to the server.';
+                this.showToast(this.authError, 'error');
             } finally {
                 this.authLoading = false;
             }
@@ -325,11 +529,14 @@
                 if (res.ok && data.success) {
                     this.authSuccess = 'Password reset successfully! You can now log in with your new password.';
                     this.authResetForm = { email: '', new_password: '' };
+                    this.showToast('Password updated successfully.', 'success');
                 } else {
                     this.authError = data.error || 'Password reset failed.';
+                    this.showToast(this.authError, 'error');
                 }
             } catch (err) {
                 this.authError = 'Error connecting to the server.';
+                this.showToast(this.authError, 'error');
             } finally {
                 this.authLoading = false;
             }
@@ -378,6 +585,12 @@
             this.totalCorrect = 0;
             this.totalAnswered = 0;
             this.activeSubsectionIndex = 0;
+            this.verifyResult = null;
+            this.errorVerify = '';
+            this.verifyNoSources = false;
+            this.resourceItems = [];
+            this.errorResources = '';
+            this.resourcesNoSources = false;
             this.stopVideoLecture();
 
             if(sub === 'chemistry') this.topic = 'Organic Functional Groups & Alkynes';
@@ -562,8 +775,92 @@
             } finally {
                 this.loadingAlchemist = false;
             }
+        },
+
+        async triggerVerify() {
+            if(!this.topic.trim()) {
+                this.errorVerify = 'Please enter a topic or question to verify first.';
+                return;
+            }
+            this.errorVerify = '';
+            this.verifyNoSources = false;
+            this.loadingVerify = true;
+            this.verifyResult = null;
+
+            try {
+                let response = await fetch('/api/verify-facts', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ topic: this.topic })
+                });
+                let data = await response.json();
+
+                if (response.ok) {
+                    if (data.no_sources_found) {
+                        this.verifyNoSources = true;
+                    } else {
+                        this.verifyResult = data;
+                    }
+                } else {
+                    this.errorVerify = data.error || 'Could not verify this topic right now.';
+                    this.showToast(this.errorVerify, 'error');
+                }
+            } catch (e) {
+                this.errorVerify = 'Network error while searching for sources.';
+                this.showToast(this.errorVerify, 'error');
+            } finally {
+                this.loadingVerify = false;
+            }
+        },
+
+        async triggerResources() {
+            if(!this.topic.trim()) {
+                this.errorResources = 'Please enter a topic or question first.';
+                return;
+            }
+            this.errorResources = '';
+            this.resourcesNoSources = false;
+            this.loadingResources = true;
+            this.resourceItems = [];
+
+            try {
+                let response = await fetch('/api/find-resources', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: this.topic })
+                });
+                let data = await response.json();
+
+                if (response.ok) {
+                    if (data.no_sources_found || !data.items || data.items.length === 0) {
+                        this.resourcesNoSources = true;
+                    } else {
+                        this.resourceItems = data.items;
+                    }
+                } else {
+                    this.errorResources = data.error || 'Could not find resources right now.';
+                    this.showToast(this.errorResources, 'error');
+                }
+            } catch (e) {
+                this.errorResources = 'Network error while searching for resources.';
+                this.showToast(this.errorResources, 'error');
+            } finally {
+                this.loadingResources = false;
+            }
         }
     }">
+
+    <div class="fixed top-20 right-4 z-[100] flex flex-col gap-2 w-[calc(100%-2rem)] max-w-sm pointer-events-none">
+        <template x-for="toast in toasts" :key="toast.id">
+            <div x-show="true" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0 translate-x-8" x-transition:enter-end="opacity-100 translate-x-0" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0"
+                 class="pointer-events-auto glass-panel rounded-xl border p-3.5 shadow-2xl flex items-start gap-3 text-xs font-medium bg-slate-950/90"
+                 :class="toast.type === 'error' ? 'border-rose-500/40 text-rose-200' : (toast.type === 'success' ? 'border-emerald-500/40 text-emerald-200' : 'border-white/10 text-slate-200')">
+                <span x-text="toast.type === 'error' ? '❌' : (toast.type === 'success' ? '✅' : 'ℹ️')"></span>
+                <span class="flex-1" x-text="toast.message"></span>
+                <button @click="removeToast(toast.id)" class="text-slate-500 hover:text-slate-300 text-[10px]">✕</button>
+            </div>
+        </template>
+    </div>
 
     <div class="absolute inset-0 min-h-screen z-0 overflow-hidden pointer-events-none opacity-90 transition-all duration-1000"
          :class="themeConfig.bgClass"></div>
@@ -624,6 +921,15 @@
         <div class="flex items-center gap-4">
             <div class="text-xs font-black px-4 py-1 rounded-full border bg-slate-950/80 transition-all" :class="themeConfig.borderAccent.split(' ')[0]" x-text="themeConfig.name" x-show="currentView === 'workspace'"></div>
             
+            <div class="switch-container">
+                <input class="toggle-checkbox" id="toggle-switch" type="checkbox" x-model="isLightMode" @change="toggleThemeMode()" />
+                <label class="switch" for="toggle-switch">
+                    <div class="toggle">
+                        <div class="led"></div>
+                    </div>
+                </label>
+            </div>
+
             <template x-if="!isLoggedIn">
                 <button @click="currentView = 'auth'; authViewMode = 'login';" class="text-xs font-bold bg-white/10 border border-white/20 px-4 py-2 rounded-lg hover:bg-white/20 transition-all shadow-md">
                     Login / Sign Up
@@ -705,21 +1011,24 @@
                 <form x-show="authViewMode !== 'reset'" @submit.prevent="handleAuthSubmit" class="space-y-4">
                     <div x-show="authViewMode === 'signup'">
                         <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Username / Full Name</label>
-                        <input type="text" x-model="authForm.name" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="John Doe" :required="authViewMode === 'signup'">
+                        <input type="text" x-model="authForm.name" class="w-full bg-slate-900 border text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none transition-all" :class="authNameError ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-purple-500'" placeholder="John Doe" :required="authViewMode === 'signup'">
+                        <p x-show="authNameError" class="text-[10px] text-rose-400 mt-1" x-text="authNameError"></p>
                     </div>
                     <div>
                         <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Email Address</label>
-                        <input type="email" x-model="authForm.email" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="you@example.com" required>
+                        <input type="email" x-model="authForm.email" class="w-full bg-slate-900 border text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none transition-all" :class="authEmailError ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-purple-500'" placeholder="you@example.com" required>
+                        <p x-show="authEmailError" class="text-[10px] text-rose-400 mt-1" x-text="authEmailError"></p>
                     </div>
                     <div>
                         <div class="flex justify-between items-center mb-1">
                             <label class="text-[10px] font-black uppercase text-slate-400">Password</label>
                             <button type="button" x-show="authViewMode === 'login'" @click="authViewMode = 'reset'; authError = ''; authSuccess = '';" class="text-[10px] font-bold text-purple-400 hover:text-purple-300">Forgot Password?</button>
                         </div>
-                        <input type="password" x-model="authForm.password" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="••••••••" required>
+                        <input type="password" x-model="authForm.password" class="w-full bg-slate-900 border text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none transition-all" :class="authPasswordError ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-purple-500'" placeholder="••••••••" required>
+                        <p x-show="authPasswordError" class="text-[10px] text-rose-400 mt-1" x-text="authPasswordError"></p>
                     </div>
 
-                    <button type="submit" :disabled="authLoading" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm px-4 py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider mt-2 disabled:opacity-50">
+                    <button type="submit" :disabled="authLoading || !authFormValid" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm px-4 py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider mt-2 disabled:opacity-50 disabled:cursor-not-allowed">
                         <span x-text="authLoading ? 'Processing...' : (authViewMode === 'login' ? 'Login to Account' : 'Create Database Account')"></span>
                     </button>
                 </form>
@@ -727,14 +1036,16 @@
                 <form x-show="authViewMode === 'reset'" @submit.prevent="handleResetPassword" class="space-y-4">
                     <div>
                         <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">Registered Email Address</label>
-                        <input type="email" x-model="authResetForm.email" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="you@example.com" required>
+                        <input type="email" x-model="authResetForm.email" class="w-full bg-slate-900 border text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none transition-all" :class="authEmailError ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-purple-500'" placeholder="you@example.com" required>
+                        <p x-show="authEmailError" class="text-[10px] text-rose-400 mt-1" x-text="authEmailError"></p>
                     </div>
                     <div>
                         <label class="text-[10px] font-black uppercase text-slate-400 block mb-1">New Password</label>
-                        <input type="password" x-model="authResetForm.new_password" class="w-full bg-slate-900 border border-white/10 text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none focus:border-purple-500 transition-all" placeholder="••••••••" required>
+                        <input type="password" x-model="authResetForm.new_password" class="w-full bg-slate-900 border text-sm rounded-xl px-4 py-2.5 text-slate-100 focus:outline-none transition-all" :class="authPasswordError ? 'border-rose-500/50 focus:border-rose-500' : 'border-white/10 focus:border-purple-500'" placeholder="••••••••" required>
+                        <p x-show="authPasswordError" class="text-[10px] text-rose-400 mt-1" x-text="authPasswordError"></p>
                     </div>
 
-                    <button type="submit" :disabled="authLoading" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm px-4 py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider mt-2 disabled:opacity-50">
+                    <button type="submit" :disabled="authLoading || !authFormValid" class="w-full bg-gradient-to-r from-purple-600 to-cyan-600 hover:from-purple-500 hover:to-cyan-500 text-white font-bold text-sm px-4 py-3 rounded-xl shadow-lg transition-all uppercase tracking-wider mt-2 disabled:opacity-50 disabled:cursor-not-allowed">
                         <span x-text="authLoading ? 'Updating...' : 'Update Password'"></span>
                     </button>
                 </form>
@@ -781,11 +1092,12 @@
                         <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block">🎯 TARGET TOPIC</label>
                         <div class="relative">
                             <input type="text" x-model="topic" placeholder="e.g., Quantum Physics..." 
+                                   @keydown.enter="activeMode === 'alchemist' ? triggerMorph() : (activeMode === 'forge' ? triggerForge() : (activeMode === 'verify' ? triggerVerify() : triggerResources()))"
                                    class="w-full bg-slate-950/80 border text-sm rounded-xl px-4 py-3 text-slate-100 placeholder:text-slate-600 focus:outline-none focus:ring-1 transition-all"
                                    :class="themeConfig.borderAccent.split(' ')[0]">
                         </div>
                     </div>
-                    <div class="lg:col-span-2 space-y-2">
+                    <div class="lg:col-span-2 space-y-2" x-show="activeMode === 'alchemist'">
                         <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block">🧠 STYLE</label>
                         <select x-model="profile" class="w-full bg-slate-950/80 border border-white/10 text-sm rounded-xl px-3 py-3 text-slate-200 focus:outline-none transition-all">
                             <option value="ELI5">ELI5 (Simple)</option>
@@ -793,7 +1105,7 @@
                             <option value="Tech Executive">Executive Summary</option>
                         </select>
                     </div>
-                    <div class="lg:col-span-2 space-y-2">
+                    <div class="lg:col-span-2 space-y-2" x-show="activeMode === 'alchemist'">
                         <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block">📏 LENGTH</label>
                         <select x-model="explLength" class="w-full bg-slate-950/80 border border-white/10 text-sm rounded-xl px-3 py-3 text-slate-200 focus:outline-none transition-all">
                             <option value="Short">Short</option>
@@ -801,21 +1113,32 @@
                             <option value="Comprehensive">Comprehensive</option>
                         </select>
                     </div>
-                    <div class="lg:col-span-2 space-y-2">
+                    <div class="lg:col-span-2 space-y-2" x-show="activeMode === 'alchemist'">
                         <label class="text-[11px] font-black tracking-widest text-slate-400 uppercase block" x-text="'📊 L: ' + currentDepth"></label>
                         <input type="range" min="0" max="2" x-model="depthIndex" class="w-full accent-purple-500 h-2 bg-slate-900 rounded-lg appearance-none cursor-pointer border border-white/5 pb-2">
                     </div>
+                    <div class="space-y-2 text-[11px] text-slate-500 flex items-end pb-3" x-show="activeMode === 'verify'" x-cloak>
+                        Pulls live results from the web and cites them - no style/length settings needed.
+                    </div>
+                    <div class="space-y-2 text-[11px] text-slate-500 flex items-end pb-3" x-show="activeMode === 'resources'" x-cloak>
+                        Ask anything - you'll get 5-10 real, linked resources back.
+                    </div>
                     <div class="lg:col-span-2">
-                        <button @click="activeMode === 'alchemist' ? triggerMorph() : triggerForge()" 
-                                class="w-full text-white text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02]"
+                        <button @click="activeMode === 'alchemist' ? triggerMorph() : (activeMode === 'forge' ? triggerForge() : (activeMode === 'verify' ? triggerVerify() : triggerResources()))"
+                                :disabled="loadingAlchemist || loadingForge || loadingVerify || loadingResources"
+                                class="w-full text-white text-xs font-black uppercase tracking-wider py-3.5 px-4 rounded-xl transition-all flex items-center justify-center gap-2 shadow-lg hover:scale-[1.02] disabled:opacity-60 disabled:cursor-not-allowed disabled:hover:scale-100"
                                 :class="themeConfig.buttonBg">
-                            <span x-text="activeMode === 'alchemist' ? '⚒️ BUILD EXPLANATION' : '⚡ CREATE TEST'"></span>
+                            <span x-show="!(loadingAlchemist || loadingForge || loadingVerify || loadingResources)" x-text="activeMode === 'alchemist' ? '⚒️ BUILD EXPLANATION' : (activeMode === 'forge' ? '⚡ CREATE TEST' : (activeMode === 'verify' ? '🔎 VERIFY WITH SOURCES' : '🧭 FIND RESOURCES'))"></span>
+                            <span x-show="loadingAlchemist || loadingForge || loadingVerify || loadingResources" class="flex items-center gap-2">
+                                <svg class="animate-spin h-3.5 w-3.5" viewBox="0 0 24 24" fill="none"><circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle><path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8v4a4 4 0 00-4 4H4z"></path></svg>
+                                <span x-text="activeMode === 'alchemist' ? 'Generating your lesson…' : (activeMode === 'forge' ? 'Building your test…' : (activeMode === 'verify' ? 'Searching sources…' : 'Finding resources…'))"></span>
+                            </span>
                         </button>
                     </div>
                 </div>
                 
                 <div class="flex flex-wrap items-center justify-between gap-4 mt-6 pt-4 border-t border-white/5 text-xs">
-                    <div class="flex gap-4">
+                    <div class="flex gap-4 flex-wrap">
                         <button @click="activeMode = 'alchemist'" class="pb-2 px-1 font-black uppercase tracking-widest transition-all relative" :class="activeMode === 'alchemist' ? themeConfig.textAccent : 'text-slate-500 hover:text-slate-300'">
                             🔬 Interactive Study Guide
                             <span x-show="activeMode === 'alchemist'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" :class="themeConfig.buttonBg"></span>
@@ -823,6 +1146,14 @@
                         <button @click="activeMode = 'forge'" class="pb-2 px-1 font-black uppercase tracking-widest transition-all relative" :class="activeMode === 'forge' ? themeConfig.textAccent : 'text-slate-500 hover:text-slate-300'">
                             ⚔️ Practice & Testing Zone
                             <span x-show="activeMode === 'forge'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" :class="themeConfig.buttonBg"></span>
+                        </button>
+                        <button @click="activeMode = 'verify'" class="pb-2 px-1 font-black uppercase tracking-widest transition-all relative" :class="activeMode === 'verify' ? themeConfig.textAccent : 'text-slate-500 hover:text-slate-300'">
+                            🔎 Cited Source Check
+                            <span x-show="activeMode === 'verify'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" :class="themeConfig.buttonBg"></span>
+                        </button>
+                        <button @click="activeMode = 'resources'" class="pb-2 px-1 font-black uppercase tracking-widest transition-all relative" :class="activeMode === 'resources' ? themeConfig.textAccent : 'text-slate-500 hover:text-slate-300'">
+                            🧭 Resource Finder
+                            <span x-show="activeMode === 'resources'" class="absolute bottom-0 left-0 right-0 h-0.5 rounded-full" :class="themeConfig.buttonBg"></span>
                         </button>
                     </div>
 
@@ -852,6 +1183,12 @@
 
             <div x-show="activeMode === 'alchemist'" class="space-y-8" x-transition>
                 <div x-show="errorAlchemist" class="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-3">❌ <span x-text="errorAlchemist"></span></div>
+
+                <div x-show="!loadingAlchemist && !alchemistResult && !errorAlchemist" class="glass-panel p-10 rounded-2xl border border-white/5 bg-slate-950/40 text-center space-y-2">
+                    <span class="text-3xl block">🔬</span>
+                    <p class="text-sm font-bold text-slate-300">No study guide yet</p>
+                    <p class="text-xs text-slate-500">Enter a topic above and click "Build Explanation" to generate one.</p>
+                </div>
 
                 <div x-show="loadingAlchemist" class="grid grid-cols-1 lg:grid-cols-12 gap-8">
                     <div class="lg:col-span-7 space-y-6">
@@ -1021,7 +1358,13 @@
 
             <div x-show="activeMode === 'forge'" class="space-y-8" x-transition>
                 <div x-show="errorForge" class="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-3">❌ <span x-text="errorForge"></span></div>
-                
+
+                <div x-show="!loadingForge && forgeItems.length === 0 && !errorForge" class="glass-panel p-10 rounded-2xl border border-white/5 bg-slate-950/40 text-center space-y-2">
+                    <span class="text-3xl block">⚔️</span>
+                    <p class="text-sm font-bold text-slate-300">No test generated yet</p>
+                    <p class="text-xs text-slate-500">Enter a topic above and click "Create Test" to generate a quiz or flashcards.</p>
+                </div>
+
                 <div x-show="loadingForge" class="grid grid-cols-1 md:grid-cols-2 gap-6">
                     <div class="glass-panel p-6 rounded-2xl h-48 shimmer"></div>
                     <div class="glass-panel p-6 rounded-2xl h-48 shimmer"></div>
@@ -1077,7 +1420,99 @@
                     </template>
                 </div>
             </div>
+
+            <div x-show="activeMode === 'verify'" class="space-y-6" x-transition x-cloak>
+                <div x-show="errorVerify" class="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-3">❌ <span x-text="errorVerify"></span></div>
+
+                <div x-show="!loadingVerify && !verifyResult && !verifyNoSources && !errorVerify" class="glass-panel p-10 rounded-2xl border border-white/5 bg-slate-950/40 text-center space-y-2">
+                    <span class="text-3xl block">🔎</span>
+                    <p class="text-sm font-bold text-slate-300">No source check run yet</p>
+                    <p class="text-xs text-slate-500">Enter a topic or question above and click "Verify With Sources". The answer is built only from real, cited web results - never invented.</p>
+                </div>
+
+                <div x-show="loadingVerify" class="glass-panel p-6 rounded-2xl h-64 shimmer"></div>
+
+                <div x-show="!loadingVerify && verifyNoSources" class="glass-panel p-10 rounded-2xl border border-amber-500/20 bg-amber-950/10 text-center space-y-2">
+                    <span class="text-3xl block">🤷</span>
+                    <p class="text-sm font-bold text-amber-300">No reliable sources found</p>
+                    <p class="text-xs text-slate-400">We couldn't retrieve trustworthy web sources for this topic, so no answer was generated. Try rephrasing the topic or being more specific.</p>
+                </div>
+
+                <div x-show="!loadingVerify && verifyResult" class="glass-panel p-6 rounded-2xl border border-white/5 shadow-2xl space-y-6 bg-slate-950/40">
+                    <div class="flex items-center gap-3 border-b border-white/5 pb-4">
+                        <span class="text-xl">🔎</span>
+                        <div>
+                            <h2 class="text-base font-extrabold text-slate-100 uppercase tracking-wider">Cited Answer</h2>
+                            <p class="text-[11px] text-slate-500">Synthesized only from the sources listed below</p>
+                        </div>
+                    </div>
+                    <p class="text-sm leading-relaxed text-slate-300 whitespace-pre-wrap" x-text="verifyResult && verifyResult.answer"></p>
+
+                    <div class="pt-4 border-t border-white/5 space-y-2">
+                        <h3 class="text-[11px] font-black tracking-widest text-slate-400 uppercase">📚 Sources</h3>
+                        <template x-for="(src, idx) in (verifyResult ? verifyResult.sources : [])" :key="idx">
+                            <a :href="src.url" target="_blank" rel="noopener noreferrer" class="flex items-start gap-2 p-2.5 rounded-xl bg-slate-900/60 border border-white/5 hover:border-purple-500/40 transition-all text-xs group">
+                                <span class="text-slate-500 font-mono" x-text="(idx + 1) + '.'"></span>
+                                <div class="flex-1 min-w-0">
+                                    <p class="font-bold text-slate-200 group-hover:text-purple-400 transition-colors truncate" x-text="src.title"></p>
+                                    <p class="text-[10px] text-slate-500 truncate" x-text="src.url"></p>
+                                </div>
+                                <span class="text-slate-600 group-hover:text-purple-400">↗</span>
+                            </a>
+                        </template>
+                    </div>
+                </div>
+            </div>
+
+            <div x-show="activeMode === 'resources'" class="space-y-6" x-transition x-cloak>
+                <div x-show="errorResources" class="p-4 bg-rose-950/40 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-center gap-3">❌ <span x-text="errorResources"></span></div>
+
+                <div x-show="!loadingResources && resourceItems.length === 0 && !resourcesNoSources && !errorResources" class="glass-panel p-10 rounded-2xl border border-white/5 bg-slate-950/40 text-center space-y-2">
+                    <span class="text-3xl block">🧭</span>
+                    <p class="text-sm font-bold text-slate-300">No resources yet</p>
+                    <p class="text-xs text-slate-500">Ask about any topic above and click "Find Resources" for 5-10 real, linked resources worth checking out.</p>
+                </div>
+
+                <div x-show="loadingResources" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div class="glass-panel p-6 rounded-2xl h-32 shimmer"></div>
+                    <div class="glass-panel p-6 rounded-2xl h-32 shimmer"></div>
+                    <div class="glass-panel p-6 rounded-2xl h-32 shimmer"></div>
+                    <div class="glass-panel p-6 rounded-2xl h-32 shimmer"></div>
+                </div>
+
+                <div x-show="!loadingResources && resourcesNoSources" class="glass-panel p-10 rounded-2xl border border-amber-500/20 bg-amber-950/10 text-center space-y-2">
+                    <span class="text-3xl block">🤷</span>
+                    <p class="text-sm font-bold text-amber-300">No solid resources found</p>
+                    <p class="text-xs text-slate-400">We couldn't find enough genuinely useful, real results for this query. Try a different phrasing.</p>
+                </div>
+
+                <div x-show="!loadingResources && resourceItems.length > 0" class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <template x-for="(item, idx) in resourceItems" :key="idx">
+                        <a :href="item.url" target="_blank" rel="noopener noreferrer" class="glass-panel p-5 rounded-2xl border border-white/5 bg-slate-950/60 hover:border-purple-500/40 transition-all space-y-2 group">
+                            <div class="flex items-center justify-between text-[10px] font-mono text-slate-500">
+                                <span x-text="'RESOURCE ' + (idx + 1)"></span>
+                                <span class="text-slate-600 group-hover:text-purple-400">↗</span>
+                            </div>
+                            <p class="text-sm font-bold text-slate-100 group-hover:text-purple-400 transition-colors" x-text="item.title"></p>
+                            <p class="text-xs text-slate-400 leading-relaxed" x-text="item.why"></p>
+                            <p class="text-[10px] text-slate-600 truncate pt-1 border-t border-white/5" x-text="item.url"></p>
+                        </a>
+                    </template>
+                </div>
+            </div>
         </div>
     </main>
+
+    <div x-show="!cookieConsentStatus" class="cookie-overlay" x-transition:enter="transition ease-out duration-300" x-transition:enter-start="opacity-0" x-transition:enter-end="opacity-100" x-transition:leave="transition ease-in duration-200" x-transition:leave-start="opacity-100" x-transition:leave-end="opacity-0">
+        <div class="cookie-card" @click.stop>
+            <svg version="1.1" id="cookieSvg" x="0px" y="0px" viewBox="0 0 122.88 122.25" xml:space="preserve"><g><path d="M101.77,49.38c2.09,3.1,4.37,5.11,6.86,5.78c2.45,0.66,5.32,0.06,8.7-2.01c1.36-0.84,3.14-0.41,3.97,0.95 c0.28,0.46,0.42,0.96,0.43,1.47c0.13,1.4,0.21,2.82,0.24,4.26c0.03,1.46,0.02,2.91-0.05,4.35h0v0c0,0.13-0.01,0.26-0.03,0.38 c-0.91,16.72-8.47,31.51-20,41.93c-11.55,10.44-27.06,16.49-43.82,15.69v0.01h0c-0.13,0-0.26-0.01-0.38-0.03 c-16.72-0.91-31.51-8.47-41.93-20C5.31,90.61-0.73,75.1,0.07,58.34H0.07v0c0-0.13,0.01-0.26,0.03-0.38 C1,41.22,8.81,26.35,20.57,15.87C32.34,5.37,48.09-0.73,64.85,0.07V0.07h0c1.6,0,2.89,1.29,2.89,2.89c0,0.4-0.08,0.78-0.23,1.12 c-1.17,3.81-1.25,7.34-0.27,10.14c0.89,2.54,2.7,4.51,5.41,5.52c1.44,0.54,2.2,2.1,1.74,3.55l0.01,0 c-1.83,5.89-1.87,11.08-0.52,15.26c0.82,2.53,2.14,4.69,3.88,6.4c1.74,1.72,3.9,3,6.39,3.78c4.04,1.26,8.94,1.18,14.31-0.55 C99.73,47.78,101.08,48.3,101.77,49.38L101.77,49.38z M59.28,57.86c2.77,0,5.01,2.24,5.01,5.01c0,2.77-2.24,5.01-5.01,5.01 c-2.77,0-5.01-2.24-5.01-5.01C54.27,60.1,56.52,57.86,59.28,57.86L59.28,57.86z M37.56,78.49c3.37,0,6.11,2.73,6.11,6.11 s-2.73,6.11-6.11,6.11s-6.11-2.73-6.11-6.11S34.18,78.49,37.56,78.49L37.56,78.49z M50.72,31.75c2.65,0,4.79,2.14,4.79,4.79 c0,2.65-2.14,4.79-4.79,4.79c-2.65,0-4.79-2.14-4.79-4.79C45.93,33.89,48.08,31.75,50.72,31.75L50.72,31.75z M119.3,32.4 c1.98,0,3.58,1.6,3.58,3.58c0,1.98-1.6,3.58-3.58,3.58s-3.58-1.6-3.58-3.58C115.71,34.01,117.32,32.4,119.3,32.4L119.3,32.4z M93.62,22.91c2.98,0,5.39,2.41,5.39,5.39c0,2.98-2.41,5.39-5.39,5.39c-2.98,0-5.39-2.41-5.39-5.39 C88.23,25.33,90.64,22.91,93.62,22.91L93.62,22.91z M97.79,0.59c3.19,0,5.78,2.59,5.78,5.78c0,3.19-2.59,5.78-5.78,5.78 c-3.19,0-5.78-2.59-5.78-5.78C92.02,3.17,94.6,0.59,97.79,0.59L97.79,0.59z M76.73,80.63c4.43,0,8.03,3.59,8.03,8.03 c0,4.43-3.59,8.03-8.03,8.03s-8.03-3.59-8.03-8.03C68.7,84.22,72.29,80.63,76.73,80.63L76.73,80.63z M31.91,46.78 c4.8,0,8.69,3.89,8.69,8.69c0,4.8-3.89,8.69-8.69,8.69s-8.69-3.89-8.69-8.69C23.22,50.68,27.11,46.78,31.91,46.78L31.91,46.78z M107.13,60.74c-3.39-0.91-6.35-3.14-8.95-6.48c-5.78,1.52-11.16,1.41-15.76-0.02c-3.37-1.05-6.32-2.81-8.71-5.18 c-2.39-2.37-4.21-5.32-5.32-8.75c-1.51-4.66-1.69-10.2-0.18-16.32c-3.1-1.8-5.25-4.53-6.42-7.88c-1.06-3.05-1.28-6.59-0.61-10.35 C47.27,5.95,34.3,11.36,24.41,20.18C13.74,29.69,6.66,43.15,5.84,58.29l0,0.05v0h0l-0.01,0.13v0C5.07,73.72,10.55,87.82,20.02,98.3 c9.44,10.44,22.84,17.29,38,18.1l0.05,0h0v0l0.13,0.01h0c15.24,0.77,29.35-4.71,39.83-14.19c10.44-9.44,17.29-22.84,18.1-38l0-0.05 v0h0l0.01-0.13v0c0.07-1.34,0.09-2.64,0.06-3.91C112.98,61.34,109.96,61.51,107.13,60.74L107.13,60.74z M116.15,64.04L116.15,64.04 L116.15,64.04L116.15,64.04z M58.21,116.42L58.21,116.42L58.21,116.42L58.21,116.42z"></path></g></svg>
+            <p class="cookieHeading">We use cookies.</p>
+            <p class="cookieDescription">This website uses cookies to ensure you get the best experience on our site.</p>
+            <div class="cookieButtonContainer">
+                <button class="acceptCookieButton" @click="acceptCookies()">Allow</button>
+                <button class="declineCookieButton" @click="declineCookies()">Decline</button>
+            </div>
+        </div>
+    </div>
 </body>
 </html>

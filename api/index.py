@@ -1,5 +1,6 @@
 import os
 import json
+import requests
 from flask import Flask, render_template, request, jsonify
 from dotenv import load_dotenv
 from groq import Groq
@@ -22,6 +23,73 @@ SUPABASE_URL = os.environ.get("SUPABASE_URL")
 SUPABASE_ANON_KEY = os.environ.get("SUPABASE_ANON_KEY")
 
 supabase: Client = create_client(SUPABASE_URL, SUPABASE_ANON_KEY) if (SUPABASE_URL and SUPABASE_ANON_KEY) else None
+
+# Search provider (Tavily) - used for real, live retrieval so the "Verify" and
+# "Resources" features are grounded in actual web results instead of the
+# model's own memory, which cannot guarantee current or working links.
+TAVILY_API_KEY = os.environ.get("TAVILY_API_KEY")
+TAVILY_ENDPOINT = "https://api.tavily.com/search"
+
+# Domains that generally indicate a more reputable / authoritative source.
+# Used only to bias ranking towards higher-quality material - Tavily's own
+# relevance score is still the primary signal.
+REPUTABLE_DOMAIN_HINTS = (
+    ".gov", ".edu", ".ac.uk", "wikipedia.org", "nature.com", "sciencedirect.com",
+    "who.int", "nih.gov", "britannica.com", "reuters.com", "apnews.com",
+    "bbc.com", "nytimes.com", "wsj.com", "khanacademy.org", "mit.edu",
+    "stanford.edu", "harvard.edu", "ieee.org", "springer.com", "jstor.org"
+)
+
+
+def run_web_search(query, max_results=8):
+    """Call the Tavily search API and return a normalized list of results.
+
+    Returns a list of dicts: {title, url, content, score}. Returns an empty
+    list (never raises) if the provider isn't configured or the call fails,
+    so callers can show an honest "no sources found" state.
+    """
+    if not TAVILY_API_KEY or not query:
+        return []
+
+    try:
+        resp = requests.post(
+            TAVILY_ENDPOINT,
+            json={
+                "api_key": TAVILY_API_KEY,
+                "query": query,
+                "search_depth": "advanced",
+                "max_results": max_results,
+                "include_answer": False,
+                "include_raw_content": False,
+            },
+            timeout=15
+        )
+        resp.raise_for_status()
+        payload = resp.json()
+        raw_results = payload.get("results", []) or []
+
+        normalized = []
+        for r in raw_results:
+            url = (r.get("url") or "").strip()
+            if not url:
+                continue
+            normalized.append({
+                "title": (r.get("title") or url).strip(),
+                "url": url,
+                "content": (r.get("content") or "").strip(),
+                "score": r.get("score", 0)
+            })
+
+        # Nudge reputable domains toward the top without discarding others.
+        def sort_key(item):
+            is_reputable = any(hint in item["url"].lower() for hint in REPUTABLE_DOMAIN_HINTS)
+            return (0 if is_reputable else 1, -float(item.get("score") or 0))
+
+        normalized.sort(key=sort_key)
+        return normalized
+    except Exception:
+        return []
+
 
 @app.route('/')
 def home():
@@ -199,7 +267,7 @@ def morph_concept():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             temperature=0.3,
             max_tokens=4096,
             response_format={"type": "json_object"}
@@ -285,7 +353,7 @@ def generate_evaluation():
                 {"role": "system", "content": system_prompt},
                 {"role": "user", "content": user_prompt}
             ],
-            model="openai/gpt-oss-20b",
+            model="llama-3.3-70b-versatile",
             temperature=0.4,
             max_tokens=4096,
             response_format={"type": "json_object"}
@@ -296,6 +364,174 @@ def generate_evaluation():
     except Exception as e:
         return jsonify({"error": str(e)}), 500
 
+@app.route('/api/verify-facts', methods=['POST'])
+def verify_facts():
+    if not client:
+        return jsonify({"error": "Groq API Key configuration missing from deployment runtime environment."}), 500
+    if not TAVILY_API_KEY:
+        return jsonify({"error": "Search provider is not configured (missing TAVILY_API_KEY)."}), 500
+
+    data = request.get_json() or {}
+    topic = data.get('topic', '').strip()
+
+    if not topic:
+        return jsonify({"error": "Please enter a topic or question to verify."}), 400
+
+    search_results = run_web_search(topic, max_results=8)
+
+    if not search_results:
+        return jsonify({
+            "answer": "",
+            "sources": [],
+            "no_sources_found": True
+        })
+
+    # Build a numbered source block so the model can only cite what's actually here.
+    source_block_lines = []
+    for idx, r in enumerate(search_results):
+        snippet = r["content"][:1200]
+        source_block_lines.append(f"[{idx + 1}] {r['title']} ({r['url']})\n{snippet}")
+    source_block = "\n\n".join(source_block_lines)
+
+    system_prompt = (
+        "You are a strict source-grounded research assistant. You will be given a topic and a numbered "
+        "list of real web search results (title, URL, and content snippet).\n"
+        "CRITICAL RULES:\n"
+        "1. Base your answer EXCLUSIVELY on the information contained in the provided numbered sources. "
+        "Do NOT add facts from your own general knowledge, and do NOT speculate.\n"
+        "2. If the provided sources do not contain enough information to answer confidently, say so plainly "
+        "instead of filling gaps with assumptions.\n"
+        "3. Every factual sentence in your answer must be traceable to at least one numbered source.\n"
+        "4. In the 'sources_used' array, include ONLY the numbers of sources you actually drew on for the answer "
+        "(omit sources you did not end up using).\n"
+        "5. Keep the answer concise, neutral, and factual - a few short paragraphs at most.\n\n"
+        "Return your response exclusively as a valid JSON object matching this schema:\n"
+        "{\n"
+        "  \"answer\": \"Concise answer synthesized only from the provided sources.\",\n"
+        "  \"sources_used\": [1, 3]\n"
+        "}\n"
+        "IMPORTANT: Output ONLY valid JSON. No markdown fences, no conversational text."
+    )
+
+    user_prompt = f"Topic / question: {topic}\n\nNumbered sources:\n\n{source_block}"
+
+    try:
+        completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.1,
+            max_tokens=2048,
+            response_format={"type": "json_object"}
+        )
+
+        response_data = json.loads(completion.choices[0].message.content)
+        used_indices = response_data.get("sources_used", []) or []
+
+        cited_sources = []
+        for i in used_indices:
+            try:
+                idx = int(i) - 1
+                if 0 <= idx < len(search_results):
+                    src = search_results[idx]
+                    cited_sources.append({"title": src["title"], "url": src["url"]})
+            except (ValueError, TypeError):
+                continue
+
+        # Fall back to showing all retrieved sources if the model didn't mark any as used.
+        if not cited_sources:
+            cited_sources = [{"title": r["title"], "url": r["url"]} for r in search_results]
+
+        return jsonify({
+            "answer": response_data.get("answer", ""),
+            "sources": cited_sources,
+            "no_sources_found": False
+        })
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
+@app.route('/api/find-resources', methods=['POST'])
+def find_resources():
+    if not client:
+        return jsonify({"error": "Groq API Key configuration missing from deployment runtime environment."}), 500
+    if not TAVILY_API_KEY:
+        return jsonify({"error": "Search provider is not configured (missing TAVILY_API_KEY)."}), 500
+
+    data = request.get_json() or {}
+    query = data.get('query', '').strip()
+
+    if not query:
+        return jsonify({"error": "Please enter a topic or question to find resources for."}), 400
+
+    search_results = run_web_search(query, max_results=12)
+
+    if not search_results:
+        return jsonify({"items": [], "no_sources_found": True})
+
+    source_block_lines = []
+    for idx, r in enumerate(search_results):
+        snippet = r["content"][:600]
+        source_block_lines.append(f"[{idx + 1}] {r['title']} ({r['url']})\n{snippet}")
+    source_block = "\n\n".join(source_block_lines)
+
+    system_prompt = (
+        "You are a helpful research librarian. You will be given a user's query and a numbered list of real "
+        "web search results (title, URL, content snippet).\n"
+        "CRITICAL RULES:\n"
+        "1. Select the 5 to 10 BEST, most useful, most relevant items from the numbered list below. "
+        "Do NOT invent new links or titles - only choose from what is provided.\n"
+        "2. If fewer than 5 of the provided sources are genuinely useful, return only the ones that are - "
+        "do not pad the list with weak or irrelevant results.\n"
+        "3. For each chosen item, write a one-sentence 'why' explaining what the user will get from it.\n"
+        "4. Reference each chosen item by its source number.\n\n"
+        "Return your response exclusively as a valid JSON object matching this schema:\n"
+        "{\n"
+        "  \"items\": [\n"
+        "    { \"source_number\": 1, \"why\": \"One short sentence on why this resource is useful.\" }\n"
+        "  ]\n"
+        "}\n"
+        "IMPORTANT: Output ONLY valid JSON. No markdown fences, no conversational text."
+    )
+
+    user_prompt = f"User query: {query}\n\nNumbered sources:\n\n{source_block}"
+
+    try:
+        completion = client.chat.completions.create(
+            messages=[
+                {"role": "system", "content": system_prompt},
+                {"role": "user", "content": user_prompt}
+            ],
+            model="llama-3.3-70b-versatile",
+            temperature=0.2,
+            max_tokens=2048,
+            response_format={"type": "json_object"}
+        )
+
+        response_data = json.loads(completion.choices[0].message.content)
+        chosen = response_data.get("items", []) or []
+
+        curated = []
+        for item in chosen:
+            try:
+                idx = int(item.get("source_number")) - 1
+                if 0 <= idx < len(search_results):
+                    src = search_results[idx]
+                    curated.append({
+                        "title": src["title"],
+                        "url": src["url"],
+                        "why": item.get("why", "").strip()
+                    })
+            except (ValueError, TypeError, AttributeError):
+                continue
+
+        return jsonify({"items": curated, "no_sources_found": False})
+    except Exception as e:
+        return jsonify({"error": str(e)}), 500
+
+
 if __name__ == '__main__':
-    print("Initializing Local Engine Node at http://127.0.0.1:5000")
-    app.run(debug=True, port=5000)
+    print("Initializing Local Engine Node at http://127.0.0.1:1500")
+    app.run(debug=True, port=1500)
